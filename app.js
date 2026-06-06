@@ -642,11 +642,17 @@
     e.stopPropagation();
     viewerGoTo(current + 1);
   });
-  // Showreel fast-forward / rewind hot-zones
-  srFfNext.addEventListener("mouseenter", function () { marqueeFf =  1; });
-  srFfNext.addEventListener("mouseleave", function () { marqueeFf =  0; });
-  srFfPrev.addEventListener("mouseenter", function () { marqueeFf = -1; });
-  srFfPrev.addEventListener("mouseleave", function () { marqueeFf =  0; });
+  // Showreel fast-forward / rewind — mouse (desktop) + touch (mobile)
+  srFfNext.addEventListener("mouseenter",  function ()  { marqueeFf =  1; });
+  srFfNext.addEventListener("mouseleave",  function ()  { marqueeFf =  0; });
+  srFfPrev.addEventListener("mouseenter",  function ()  { marqueeFf = -1; });
+  srFfPrev.addEventListener("mouseleave",  function ()  { marqueeFf =  0; });
+  srFfNext.addEventListener("touchstart",  function (e) { e.preventDefault(); marqueeFf =  1; }, { passive: false });
+  srFfNext.addEventListener("touchend",    function ()  { marqueeFf =  0; });
+  srFfNext.addEventListener("touchcancel", function ()  { marqueeFf =  0; });
+  srFfPrev.addEventListener("touchstart",  function (e) { e.preventDefault(); marqueeFf = -1; }, { passive: false });
+  srFfPrev.addEventListener("touchend",    function ()  { marqueeFf =  0; });
+  srFfPrev.addEventListener("touchcancel", function ()  { marqueeFf =  0; });
 
   creditsBtn.addEventListener("click", function () { creditsOverlay.hidden = false; });
   coClose.addEventListener("click",    function () { creditsOverlay.hidden = true;  });

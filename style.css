@@ -563,7 +563,7 @@ a { color: inherit; text-decoration: none; }
    RESPONSIVE — Mobile portrait
    ========================================================================= */
 @media (max-width: 640px) {
-  :root { --hdr: 76px; --sr-vpad: 1rem; --vwc-h: 46px; }
+  :root { --hdr: 76px; --sr-vpad: 1rem; --vwc-h: 64px; }
 
   .site-name { font-size: .75rem; }
   .site-nav a { margin: 0 .65rem; }
@@ -587,26 +587,27 @@ a { color: inherit; text-decoration: none; }
     word-break: break-word;
   }
 
-  /* FF buttons — mouseenter/leave don't fire on touch; hide them */
-  .sr-ff { display: none; }
-
-  /* Viewer nav — always compact; no preview expansion when paused */
-  .vw-nav  { width: 44px; }
+  /* Nav — always compact and centered; no shift, no preview expansion when paused */
+  .vw-nav  { width: 44px; padding-top: 0; }
   .vw-nav-label, .vw-nav-thumb-wrap { display: none; }
-  .vw-nav-icon { font-size: 1.1rem; }
-  /* Override the desktop paused-state expansion */
+  .vw-nav-icon { font-size: 1.2rem; }
   .viewer.is-paused .vw-nav { width: 44px; }
-  /* Reset the paused grid layout back to plain flex on mobile */
   .viewer.is-paused .vw-nav--prev .vw-nav-hit,
   .viewer.is-paused .vw-nav--next .vw-nav-hit { display: flex; padding: .75rem; }
 
-  /* Controls — always visible on mobile (no hover event on touch) */
-  .vw-controls { opacity: 1; gap: .55rem; padding: 0 .85rem; }
+  /* Controls bar — taller, always visible, bigger touch targets */
+  .vw-controls { opacity: 1; gap: .7rem; padding: 0 1rem; }
+  .vwc-btn { font-size: 1.25rem; min-width: 2rem; }
+  .vwc-play { font-size: 1.15rem; min-width: 2rem; text-align: center; }
+  .vwc-time { font-size: .6rem; }
 
-  /* Volume slider — system hardware buttons control it; hide to save bar space */
-  .vwc-volume { display: none; }
+  /* Progress track — always tall on touch, with a visible handle for scrubbing */
+  .vwc-progress-track { height: 5px; }
+  .vwc-progress-handle { width: 14px; height: 14px; transform: translate(-50%, -50%) scale(1); }
 
-  .vwc-time { font-size: .58rem; }
+  /* Volume slider — restore and widen for comfortable touch dragging */
+  .vwc-volume { display: block; width: 90px; }
+
   .vw-top  { height: 52px; }
   .vw-bottom-safe { padding: .3rem 1.25rem .15rem; }
 
@@ -619,16 +620,30 @@ a { color: inherit; text-decoration: none; }
    RESPONSIVE — Landscape mobile / small tablets
    ========================================================================= */
 @media (max-height: 500px) {
-  :root { --hdr: 64px; --sr-vpad: .75rem; }
+  :root { --hdr: 64px; --sr-vpad: .75rem; --vwc-h: 52px; }
   .site-header { padding: .5rem var(--pad); gap: .35rem; }
 
   .vw-top    { height: 44px; }
-  .vw-nav    { width: 48px; }
+
+  /* Nav — always compact and stationary; never expand or shift when paused */
+  .vw-nav    { width: 48px; padding-top: 0; }
   .vw-nav-label, .vw-nav-thumb-wrap { display: none; }
-  :root { --vwc-h: 40px; }
-  .vw-controls { gap: .5rem; padding: 0 .75rem; }
-  .vwc-volume { width: 46px; }
+  .viewer.is-paused .vw-nav { width: 48px; }
+  .viewer.is-paused .vw-nav--prev .vw-nav-hit,
+  .viewer.is-paused .vw-nav--next .vw-nav-hit { display: flex; padding: .5rem; }
+
+  /* Controls — always visible, bigger touch targets */
+  .vw-controls { opacity: 1; gap: .6rem; padding: 0 .9rem; }
+  .vwc-btn { font-size: 1.1rem; min-width: 1.8rem; }
+  .vwc-play { font-size: 1.05rem; min-width: 1.8rem; }
   .vwc-time { display: none; }
+
+  /* Progress — visible handle for touch scrubbing */
+  .vwc-progress-track { height: 4px; }
+  .vwc-progress-handle { width: 13px; height: 13px; transform: translate(-50%, -50%) scale(1); }
+
+  /* Volume slider — wider for comfortable landscape dragging */
+  .vwc-volume { display: block; width: 90px; }
 
   /* Always show card title on landscape mobile — no hover on touch screens */
   .reel-card-title {
