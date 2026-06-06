@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timotej Krist — Videography</title>
+  <link rel="preconnect" href="https://player.vimeo.com" />
+  <link rel="preconnect" href="https://vumbnail.com" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="#" class="site-name" id="siteName" data-go-home>Timotej Krist</a>
+    <nav class="site-nav">
+      <a href="#" data-go-home>Work</a>
+      <a href="#about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===== Showreel marquee ===== -->
+    <section class="showreel" id="showreel">
+      <div class="sr-wrap">
+        <div class="sr-track" id="srTrack"></div>
+      </div>
+      <div class="sr-info" id="srInfo">
+        <p class="sr-title" id="srTitle"></p>
+        <p class="sr-sub"   id="srSub"></p>
+      </div>
+    </section>
+
+    <!-- ===== About ===== -->
+    <section id="about" class="about">
+      <p class="about-label">About</p>
+      <p id="aboutText"></p>
+      <ul id="contactList" class="contact"></ul>
+    </section>
+  </main>
+
+  <!-- ===== Expanded viewer ===== -->
+  <div id="viewer" class="viewer" aria-hidden="true">
+
+    <!-- Top bar: site name + close -->
+    <div class="vw-top">
+      <span class="vw-name" id="vwName"></span>
+      <button class="vw-close" id="vwClose" aria-label="Close">×</button>
+    </div>
+
+    <!-- Side navigation — spans full viewer height (position: absolute) -->
+    <button class="vw-nav vw-nav--prev" id="vwPrev" aria-label="Previous project">
+      <div class="vw-nav-hit">
+        <img class="vw-nav-thumb" id="vwPrevThumb" alt="">
+        <span class="vw-nav-icon">⏮</span>
+        <span class="vw-nav-label" id="vwPrevLabel"></span>
+      </div>
+    </button>
+    <button class="vw-nav vw-nav--next" id="vwNext" aria-label="Next project">
+      <div class="vw-nav-hit">
+        <img class="vw-nav-thumb" id="vwNextThumb" alt="">
+        <span class="vw-nav-icon">⏭</span>
+        <span class="vw-nav-label" id="vwNextLabel"></span>
+      </div>
+    </button>
+
+    <!-- Video -->
+    <div class="vw-video">
+      <div id="playerFrame" class="player-frame"></div>
+    </div>
+
+    <!-- Bottom: title + credits button -->
+    <div class="vw-bottom">
+      <p class="vw-title" id="vwTitle"></p>
+      <button class="vw-credits-btn" id="creditsBtn">Credits</button>
+    </div>
+
+    <!-- Credits overlay (covers entire viewer) -->
+    <div class="credits-overlay" id="creditsOverlay" hidden>
+      <p class="co-title" id="coTitle"></p>
+      <dl class="co-list" id="coList"></dl>
+      <button class="co-close" id="coClose">×</button>
+    </div>
+
+  </div>
+
+  <footer class="site-footer">
+    <span id="footName">Timotej Krist</span> — Leeuwarden, NL
+  </footer>
+
+  <script src="content.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
