@@ -582,6 +582,13 @@
   }
 
   function closeViewer() {
+    // Exit fullscreen first — on mobile, staying in fullscreen while closing the viewer
+    // locks the user on a blank fullscreen page with no way to interact.
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(function () {});
+    } else if (document.webkitFullscreenElement) {
+      document.webkitExitFullscreen();
+    }
     destroyPlayer();
     playerFrame.innerHTML = "";
     viewer.classList.remove("open", "is-paused");

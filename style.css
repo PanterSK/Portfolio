@@ -599,6 +599,16 @@ a { color: inherit; text-decoration: none; }
 
   /* Close button must sit above the nav panels (nav is z-index:10) */
   .vw-top  { height: 52px; z-index: 12; }
+  /* Stretch close button to fill full header height and reach the right screen edge,
+     so tapping anywhere in the top-right corner reliably closes the viewer */
+  .vw-close {
+    top: 0; bottom: 0; right: 0;
+    transform: none;
+    height: auto;
+    display: flex; align-items: center;
+    padding: 0 1.25rem 0 1rem;
+    font-size: 1.75rem;
+  }
 
   /* Controls bar — taller, always visible, bigger touch targets */
   .vw-controls { opacity: 1; gap: .7rem; padding: 0 1rem; }
