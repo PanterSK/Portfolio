@@ -53,9 +53,11 @@
   var marqueeHovered = false; // true while cursor is over the track (slow down only)
   var marqueeFf      = 0;     // fast-forward multiplier: -1 rewind, 0 normal, +1 forward
   var oneSetWidth    = 0;
-  var isDragging     = false; // true while finger is dragging the showreel
+  var isDragging     = false; // true once gesture is locked to horizontal
   var dragStartX     = 0;
+  var dragStartY     = 0;
   var dragStartPos   = 0;
+  var dragLocked     = null; // null = undecided | 'h' = horizontal | 'v' = vertical
 
   // -----------------------------------------------------------------------
   // Site info (header / footer only — about content loads in openAbout)
@@ -122,24 +124,43 @@
     srTrack.addEventListener("mouseenter", function () { marqueeHovered = true;  });
     srTrack.addEventListener("mouseleave", function () { marqueeHovered = false; });
 
-    // Touch drag — finger-scroll the showreel; auto-scroll resumes on release
+    // Touch drag — finger-scroll the showreel; auto-scroll resumes on release.
+    // Direction is locked after the first ~4 px of movement so that a vertical
+    // page-scroll never moves the reel, and a horizontal reel-drag never scrolls
+    // the page at the same time.
     var srWrap = srTrack.parentElement;
     srWrap.addEventListener("touchstart", function (e) {
       if (e.touches.length !== 1) return;
-      isDragging   = true;
+      isDragging   = false;   // wait for direction lock before engaging
+      dragLocked   = null;
       dragStartX   = e.touches[0].clientX;
+      dragStartY   = e.touches[0].clientY;
       dragStartPos = marqueePos;
     }, { passive: true });
     srWrap.addEventListener("touchmove", function (e) {
-      if (!isDragging || e.touches.length !== 1) return;
+      if (e.touches.length !== 1) return;
       var dx = e.touches[0].clientX - dragStartX;
+      var dy = e.touches[0].clientY - dragStartY;
+
+      // Decide direction once movement exceeds the threshold
+      if (!dragLocked) {
+        if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return; // not enough movement yet
+        dragLocked = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+        if (dragLocked === 'h') isDragging = true;
+      }
+
+      if (dragLocked === 'v') return; // vertical — let the browser scroll the page
+
+      // Horizontal reel drag: block page scroll and move the track
+      e.preventDefault();
       marqueePos = dragStartPos + dx;
       while (marqueePos > 0)             marqueePos -= oneSetWidth;
       while (marqueePos <= -oneSetWidth) marqueePos += oneSetWidth;
       srTrack.style.transform = "translateX(" + marqueePos + "px)";
-    }, { passive: true });
-    srWrap.addEventListener("touchend",    function () { isDragging = false; });
-    srWrap.addEventListener("touchcancel", function () { isDragging = false; });
+    }, { passive: false }); // passive:false required to call preventDefault
+    function endReelDrag() { isDragging = false; dragLocked = null; }
+    srWrap.addEventListener("touchend",    endReelDrag);
+    srWrap.addEventListener("touchcancel", endReelDrag);
 
     // Only resize cards when the viewport WIDTH changes (real resize or orientation
     // change). On mobile, the browser URL bar collapsing only changes the HEIGHT —

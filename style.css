@@ -590,7 +590,7 @@ a { color: inherit; text-decoration: none; }
   /* Showreel — hide FF buttons; use finger drag instead */
   .sr-ff { display: none; }
   /* pan-y lets the browser scroll the page vertically; JS owns horizontal drag */
-  .sr-track { touch-action: pan-y; }
+  .sr-wrap { touch-action: pan-y; }
 
   /* Nav — always compact and centered; no shift, no preview expansion when paused */
   .vw-nav  { width: 44px; padding-top: 0; }
@@ -677,7 +677,7 @@ a { color: inherit; text-decoration: none; }
 
   /* Showreel — hide FF buttons; use finger drag instead */
   .sr-ff { display: none; }
-  .sr-track { touch-action: pan-y; }
+  .sr-wrap { touch-action: pan-y; }
 
   /* Always show card title on landscape mobile — no hover on touch screens */
   .reel-card-title {
