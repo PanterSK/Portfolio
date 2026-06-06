@@ -637,7 +637,16 @@ a { color: inherit; text-decoration: none; }
   :root { --hdr: 64px; --sr-vpad: .75rem; --vwc-h: 52px; }
   .site-header { padding: .5rem var(--pad); gap: .35rem; }
 
-  .vw-top    { height: 44px; }
+  /* Close button above nav panel in landscape too */
+  .vw-top  { height: 44px; z-index: 12; }
+  .vw-close {
+    top: 0; bottom: 0; right: 0;
+    transform: none;
+    height: auto;
+    display: flex; align-items: center;
+    padding: 0 1.25rem 0 1rem;
+    font-size: 1.75rem;
+  }
 
   /* Nav — always compact and stationary; never expand or shift when paused */
   .vw-nav    { width: 48px; padding-top: 0; }
