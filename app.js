@@ -222,7 +222,8 @@
     var vPad = vPadUnit * 2;
 
     var cardH = Math.max(140, window.innerHeight - hdrH - vPad);
-    cardH = Math.round(cardH * 0.8); // ~20% smaller showreel
+    // Desktop: 20% smaller than full height. Mobile: 50% smaller (0.4 = half of 0.8).
+    cardH = Math.round(cardH * (isMobile ? 0.4 : 0.8));
     var cardW = Math.round(cardH * 16 / 9);
 
     // On portrait mobile we intentionally let the card be wider than the screen —
@@ -422,6 +423,8 @@
     if (old) old.remove();
     wrap.classList.remove("preview-ready");
     imgEl.src = thumbUrl(p);
+    // No live previews on mobile — thumb-wrap is hidden anyway and iframes waste data.
+    if (window.innerWidth <= 640) return;
 
     var iframe = document.createElement("iframe");
     iframe.className = "vw-nav-preview";
