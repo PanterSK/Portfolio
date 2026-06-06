@@ -6,63 +6,82 @@
   "use strict";
 
   // --- Elements ----------------------------------------------------------
-  const srTrack        = document.getElementById("srTrack");
-  const srTitle        = document.getElementById("srTitle");
-  const srSub          = document.getElementById("srSub");
-  const viewer         = document.getElementById("viewer");
-  const vwName         = document.getElementById("vwName");
-  const vwTitle        = document.getElementById("vwTitle");
-  const vwClose        = document.getElementById("vwClose");
-  const vwPrev         = document.getElementById("vwPrev");
-  const vwNext         = document.getElementById("vwNext");
-  const vwPrevLabel    = document.getElementById("vwPrevLabel");
-  const vwNextLabel    = document.getElementById("vwNextLabel");
-  const playerFrame    = document.getElementById("playerFrame");
-  const vwPrevThumb    = document.getElementById("vwPrevThumb");
-  const vwNextThumb    = document.getElementById("vwNextThumb");
-  const creditsBtn     = document.getElementById("creditsBtn");
-  const creditsOverlay = document.getElementById("creditsOverlay");
-  const coClose        = document.getElementById("coClose");
-  const coTitle        = document.getElementById("coTitle");
-  const coList         = document.getElementById("coList");
+  var srTrack        = document.getElementById("srTrack");
+  var aboutOverlay   = document.getElementById("aboutOverlay");
+  var aoClose        = document.getElementById("aoClose");
+  var viewer         = document.getElementById("viewer");
+  var vwName         = document.getElementById("vwName");
+  var vwTitle        = document.getElementById("vwTitle");
+  var vwClose        = document.getElementById("vwClose");
+  var vwPrev         = document.getElementById("vwPrev");
+  var vwNext         = document.getElementById("vwNext");
+  var vwPrevLabel    = document.getElementById("vwPrevLabel");
+  var vwNextLabel    = document.getElementById("vwNextLabel");
+  var vwPrevThumb    = document.getElementById("vwPrevThumb");
+  var vwNextThumb    = document.getElementById("vwNextThumb");
+  var playerFrame    = document.getElementById("playerFrame");
+  var creditsBtn     = document.getElementById("creditsBtn");
+  var creditsOverlay = document.getElementById("creditsOverlay");
+  var coClose        = document.getElementById("coClose");
+  var coTitle        = document.getElementById("coTitle");
+  var coList         = document.getElementById("coList");
 
-  let current     = 0;
-  let viewerIframe = null;
-  const viewerIframes = {};
+  // --- State -------------------------------------------------------------
+  var current      = 0;
+  var player       = null;   // active Vimeo.Player
 
-  // Marquee state
-  let marqueePos    = 0;
-  let marqueeSpeed  = 1;      // px per frame (recalculated in sizeCards)
-  let marqueeRAF    = null;
-  let marqueePaused = false;
-  let cardSetWidth  = 0;      // total width of one set of n cards
+  // Marquee
+  var marqueePos     = 0;
+  var marqueeSpeed   = 0.6;
+  var marqueePaused  = false; // true while viewer is open (full stop)
+  var marqueeHovered = false; // true while cursor is over the track (slow down only)
+  var oneSetWidth    = 0;
 
   // -----------------------------------------------------------------------
-  // Site info
+  // Site info (header / footer only — about content loads in openAbout)
   // -----------------------------------------------------------------------
   function applySiteInfo() {
     if (typeof SITE === "undefined") return;
     document.title = SITE.name + " — Videography";
     setText("siteName", SITE.name);
     setText("footName", SITE.name);
-    setText("aboutText", SITE.about || "");
-
-    const list = document.getElementById("contactList");
-    list.innerHTML = "";
-    (SITE.contact || []).forEach(function (c) {
-      const li = document.createElement("li");
-      const a  = document.createElement("a");
-      a.textContent = c.label;
-      a.href = c.link;
-      if (!c.link.startsWith("mailto:")) { a.target = "_blank"; a.rel = "noopener"; }
-      li.appendChild(a);
-      list.appendChild(li);
-    });
   }
 
   function setText(id, val) {
-    const el = document.getElementById(id);
+    var el = document.getElementById(id);
     if (el) el.textContent = val;
+  }
+
+  // -----------------------------------------------------------------------
+  // About overlay
+  // -----------------------------------------------------------------------
+  function openAbout() {
+    if (typeof SITE !== "undefined") {
+      setText("aoName", SITE.name);
+      setText("aoRole", SITE.role || "");
+      setText("aoText", SITE.about || "");
+
+      var list = document.getElementById("aoContacts");
+      list.innerHTML = "";
+      (SITE.contact || []).forEach(function (c) {
+        var li = document.createElement("li");
+        var a  = document.createElement("a");
+        a.textContent = c.label;
+        a.href = c.link;
+        if (c.link.indexOf("mailto:") !== 0) { a.target = "_blank"; a.rel = "noopener"; }
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+    }
+    aboutOverlay.classList.add("open");
+    aboutOverlay.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeAbout() {
+    aboutOverlay.classList.remove("open");
+    aboutOverlay.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
   }
 
   // -----------------------------------------------------------------------
@@ -70,29 +89,27 @@
   // -----------------------------------------------------------------------
   function buildShowreel() {
     if (typeof PROJECTS === "undefined" || !PROJECTS.length) {
-      srTrack.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center">No projects yet — add some in content.js</p>';
+      srTrack.innerHTML =
+        '<p style="color:var(--muted);padding:2rem;text-align:center">No projects yet — add some in content.js</p>';
       return;
     }
-
-    // Original set + one duplicate for seamless looping
-    PROJECTS.forEach(function (p, i) { srTrack.appendChild(makeCard(p, i, false)); });
-    PROJECTS.forEach(function (p, i) { srTrack.appendChild(makeCard(p, i, true));  });
+    // Two identical sets → seamless infinite loop
+    PROJECTS.forEach(function (p, i) { srTrack.appendChild(makeCard(p, i)); });
+    PROJECTS.forEach(function (p, i) { srTrack.appendChild(makeCard(p, i)); });
 
     sizeCards();
-    startMarquee();
 
-    srTrack.addEventListener("mouseenter", function () { marqueePaused = true;  });
-    srTrack.addEventListener("mouseleave", function () { marqueePaused = false; });
+    srTrack.addEventListener("mouseenter", function () { marqueeHovered = true;  });
+    srTrack.addEventListener("mouseleave", function () { marqueeHovered = false; });
 
     window.addEventListener("resize", sizeCards);
-    updateInfo(0);
+    requestAnimationFrame(marqueeTick);
   }
 
-  function makeCard(p, index, isClone) {
+  function makeCard(p, index) {
     var card  = document.createElement("div");
     card.className = "reel-card";
     card.dataset.index = index;
-    if (isClone) card.setAttribute("aria-hidden", "true");
 
     var inner = document.createElement("div");
     inner.className = "reel-inner";
@@ -103,7 +120,6 @@
     img.alt = p.title;
     inner.appendChild(img);
 
-    // Title overlay (shown on hover via CSS)
     var titleEl = document.createElement("div");
     titleEl.className = "reel-card-title";
     titleEl.textContent = p.title;
@@ -111,23 +127,26 @@
 
     card.appendChild(inner);
 
-    // Hover → inject muted preview iframe; leave → remove it
+    // Hover → play muted background preview
     card.addEventListener("mouseenter", function () {
-      var iframe = document.createElement("iframe");
-      iframe.className = "reel-preview";
-      iframe.setAttribute("allow", "autoplay");
-      iframe.src =
-        "https://player.vimeo.com/video/" + encodeURIComponent(p.vimeoId) +
-        "?background=1&autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&dnt=1";
-      inner.appendChild(iframe);
-      setTimeout(function () { if (iframe.parentNode) card.classList.add("preview-ready"); }, 300);
-      updateInfo(index);
+      if (!inner.querySelector(".reel-preview")) {
+        var iframe = document.createElement("iframe");
+        iframe.className = "reel-preview";
+        iframe.setAttribute("allow", "autoplay");
+        iframe.src =
+          "https://player.vimeo.com/video/" + encodeURIComponent(p.vimeoId) +
+          "?background=1&autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&dnt=1";
+        inner.appendChild(iframe);
+        setTimeout(function () {
+          if (iframe.parentNode) card.classList.add("preview-ready");
+        }, 350);
+      }
     });
 
     card.addEventListener("mouseleave", function () {
       card.classList.remove("preview-ready");
-      var existing = inner.querySelector(".reel-preview");
-      if (existing) existing.remove();
+      var prev = inner.querySelector(".reel-preview");
+      if (prev) prev.remove();
     });
 
     card.addEventListener("click", function () { openViewer(index); });
@@ -135,64 +154,101 @@
     return card;
   }
 
-  // Size every card to fill the showreel section height and derive width from 16:9
+  // Cards fill viewport height; on portrait mobile constrain to viewport width
   function sizeCards() {
-    var section = document.getElementById("showreel");
-    var infoH   = 80; // approximate height of sr-info strip
-    var cardH   = Math.max(180, section.offsetHeight - infoH);
-    var cardW   = Math.round(cardH * 16 / 9);
+    if (typeof PROJECTS === "undefined" || !PROJECTS.length) return;
 
-    document.querySelectorAll(".reel-card").forEach(function (c) {
+    var hdrH  = parseInt(getCssVar("--hdr"), 10) || 48;
+    var isMobile = window.innerWidth <= 640;
+    var isLandscapeSmall = window.innerHeight <= 500;
+    // match --sr-vpad from CSS
+    var vPadUnit = isLandscapeSmall ? 12 : (isMobile ? 16 : Math.min(64, Math.max(32, window.innerHeight * 0.05)));
+    var vPad = vPadUnit * 2;
+
+    var cardH = Math.max(140, window.innerHeight - hdrH - vPad);
+    var cardW = Math.round(cardH * 16 / 9);
+
+    // On portrait mobile the height-driven width can exceed the viewport
+    if (cardW > window.innerWidth) {
+      cardW = window.innerWidth;
+      cardH = Math.round(cardW * 9 / 16);
+    }
+
+    srTrack.querySelectorAll(".reel-card").forEach(function (c) {
       c.style.width  = cardW + "px";
       c.style.height = cardH + "px";
     });
 
-    cardSetWidth = cardW * PROJECTS.length;
-    // Aim for ~14 s to scroll one card width past
-    marqueeSpeed = cardW / (14 * 60);
+    oneSetWidth  = cardW * PROJECTS.length;
+    marqueeSpeed = Math.max(0.2, cardW / (14 * 60));
   }
 
-  // -----------------------------------------------------------------------
-  // RAF marquee — pixel-perfect seamless loop
-  // -----------------------------------------------------------------------
-  function startMarquee() {
-    if (marqueeRAF) cancelAnimationFrame(marqueeRAF);
-    function tick() {
-      if (!marqueePaused && cardSetWidth > 0) {
-        marqueePos -= marqueeSpeed;
-        if (marqueePos <= -cardSetWidth) marqueePos += cardSetWidth;
-        srTrack.style.transform = "translateX(" + marqueePos + "px)";
-      }
-      marqueeRAF = requestAnimationFrame(tick);
+  function getCssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name) || "48";
+  }
+
+  function marqueeTick() {
+    if (!marqueePaused && oneSetWidth > 0) {
+      // Hover slows to 12 % of normal speed; otherwise full speed
+      var speed = marqueeHovered ? marqueeSpeed * 0.12 : marqueeSpeed;
+      marqueePos -= speed;
+      if (marqueePos <= -oneSetWidth) marqueePos += oneSetWidth;
+      srTrack.style.transform = "translateX(" + marqueePos + "px)";
     }
-    marqueeRAF = requestAnimationFrame(tick);
-  }
-
-  function updateInfo(index) {
-    var p = PROJECTS[index];
-    srTitle.textContent = p.title.toUpperCase();
-    var dir = (p.credits || []).find(function (c) { return /direct/i.test(c.role); });
-    srSub.textContent = dir
-      ? "Directed by " + dir.name
-      : [p.type, p.year].filter(Boolean).join(" · ");
+    requestAnimationFrame(marqueeTick);
   }
 
   // -----------------------------------------------------------------------
-  // Viewer preloading — all iframes created at startup so playback is instant
+  // Background preload — tiny 2×2 px muted iframes, one per video.
+  // These autoplay silently at page load, populating the browser's CDN cache
+  // so that clicking a card plays the video almost instantly.
   // -----------------------------------------------------------------------
-  function initViewerPreloads() {
+  function createPreloadIframes() {
+    if (typeof PROJECTS === "undefined") return;
     PROJECTS.forEach(function (p, i) {
       var iframe = document.createElement("iframe");
-      iframe.className = "vw-iframe";
-      iframe.dataset.index = i;
-      iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture");
-      iframe.setAttribute("allowfullscreen", "");
-      // autoplay=0 — we trigger play via postMessage when the viewer opens
+      iframe.className = "vimeo-preload-frame";
+      // Stagger slightly so they each get their own 2 px slot
+      iframe.style.right = (i * 3) + "px";
+      iframe.setAttribute("allow", "autoplay");
+      iframe.setAttribute("aria-hidden", "true");
       iframe.src =
         "https://player.vimeo.com/video/" + encodeURIComponent(p.vimeoId) +
-        "?autoplay=0&title=0&byline=0&portrait=0&dnt=1";
-      playerFrame.appendChild(iframe);
-      viewerIframes[i] = iframe;
+        "?background=1&autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&dnt=1";
+      document.body.appendChild(iframe);
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // Hi-res thumbnails via Vimeo oEmbed (async — upgrades images when ready)
+  // -----------------------------------------------------------------------
+  function fetchHiResThumbs() {
+    if (typeof PROJECTS === "undefined") return;
+    PROJECTS.forEach(function (p, i) {
+      if (p.thumbnail) return; // user-supplied thumbnail, leave it alone
+      fetch(
+        "https://vimeo.com/api/oembed.json?url=https%3A%2F%2Fvimeo.com%2F" +
+        p.vimeoId + "&width=1920",
+        { mode: "cors" }
+      )
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var base = d && d.thumbnail_url;
+          if (!base) return;
+
+          // Try the highest available resolution from Vimeo's CDN
+          var hiRes = base.replace(/_\d+x\d+/, "_1920x1080");
+          p._hiResThumb = hiRes;
+
+          document.querySelectorAll(
+            ".reel-card[data-index=\"" + i + "\"] .reel-thumb"
+          ).forEach(function (img) {
+            // Fall back to oEmbed URL if 1920 doesn't exist on CDN
+            img.onerror = function () { img.src = base; img.onerror = null; };
+            img.src = hiRes;
+          });
+        })
+        .catch(function () {});
     });
   }
 
@@ -200,26 +256,28 @@
   // Expanded viewer
   // -----------------------------------------------------------------------
   function openViewer(index) {
-    current = index;
-    var p = PROJECTS[index];
     var n = PROJECTS.length;
+    current = ((index % n) + n) % n;
+    var p = PROJECTS[current];
 
     marqueePaused = true;
 
+    // Labels
     vwName.textContent  = (typeof SITE !== "undefined" ? SITE.name : "").toUpperCase();
     vwTitle.textContent = p.title.toUpperCase();
 
-    var prevIdx = (index - 1 + n) % n;
-    var nextIdx = (index + 1) % n;
+    var prevIdx = (current - 1 + n) % n;
+    var nextIdx = (current + 1) % n;
     vwPrevLabel.textContent = PROJECTS[prevIdx].title;
     vwNextLabel.textContent = PROJECTS[nextIdx].title;
+    vwPrevThumb.src = thumbUrl(PROJECTS[prevIdx]);
+    vwNextThumb.src = thumbUrl(PROJECTS[nextIdx]);
     vwPrev.style.visibility = n > 1 ? "" : "hidden";
     vwNext.style.visibility = n > 1 ? "" : "hidden";
 
+    // Credits
     creditsBtn.style.display = (p.credits && p.credits.length) ? "" : "none";
     creditsOverlay.hidden = true;
-    viewer.classList.remove("credits-open");
-
     coTitle.textContent = p.title.toUpperCase();
     coList.innerHTML = "";
     (p.credits || []).forEach(function (c) {
@@ -231,32 +289,64 @@
       coList.appendChild(dd);
     });
 
-    vwPrevThumb.src = thumbUrl(PROJECTS[prevIdx]);
-    vwNextThumb.src = thumbUrl(PROJECTS[nextIdx]);
+    // Build the player fresh each time — video data is warm in CDN cache
+    destroyPlayer();
+    playerFrame.innerHTML = "";
+    viewer.classList.remove("is-paused");
 
-    // Deactivate all iframes, activate the selected one and trigger play
-    Object.keys(viewerIframes).forEach(function (k) {
-      viewerIframes[k].classList.remove("is-active");
-    });
-    viewerIframe = viewerIframes[index];
-    viewerIframe.classList.add("is-active");
-    viewerIframe.contentWindow.postMessage(
-      JSON.stringify({ method: "play" }), "https://player.vimeo.com"
-    );
+    var holder = document.createElement("div");
+    holder.style.cssText = "position:absolute;inset:0;width:100%;height:100%;";
+    playerFrame.appendChild(holder);
+
+    if (typeof Vimeo !== "undefined" && Vimeo.Player) {
+      player = new Vimeo.Player(holder, {
+        id:         parseInt(p.vimeoId, 10),
+        autoplay:   true,
+        muted:      false,
+        title:      false,
+        byline:     false,
+        portrait:   false,
+        dnt:        true,
+        responsive: false
+      });
+      player.on("pause", function () { viewer.classList.add("is-paused"); });
+      player.on("play",  function () { viewer.classList.remove("is-paused"); });
+      // Once ready: ensure unmuted + best quality
+      player.ready().then(function () {
+        player.setMuted(false);
+        player.setVolume(1);
+        player.setQuality("1080p").catch(function () {
+          player.setQuality("720p").catch(function () {});
+        });
+      });
+      player.play().catch(function () {});
+    } else {
+      // Fallback: plain iframe if SDK failed to load
+      var iframe = document.createElement("iframe");
+      iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture");
+      iframe.setAttribute("allowfullscreen", "");
+      iframe.src =
+        "https://player.vimeo.com/video/" + encodeURIComponent(p.vimeoId) +
+        "?autoplay=1&title=0&byline=0&portrait=0&dnt=1";
+      iframe.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;";
+      holder.appendChild(iframe);
+    }
 
     viewer.classList.add("open");
     viewer.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
   }
 
-  function closeViewer() {
-    if (viewerIframe) {
-      viewerIframe.classList.remove("is-active");
-      viewerIframe.contentWindow.postMessage(
-        JSON.stringify({ method: "pause" }), "https://player.vimeo.com"
-      );
+  function destroyPlayer() {
+    if (player && typeof player.destroy === "function") {
+      try { player.destroy(); } catch (e) {}
     }
-    viewerIframe = null;
+    player = null;
+  }
+
+  function closeViewer() {
+    destroyPlayer();
+    playerFrame.innerHTML = "";
     viewer.classList.remove("open", "is-paused");
     viewer.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
@@ -266,62 +356,86 @@
 
   function viewerGoTo(index) {
     creditsOverlay.hidden = true;
-    openViewer(((index % PROJECTS.length) + PROJECTS.length) % PROJECTS.length);
+    openViewer(index);
   }
-
-  vwClose.addEventListener("click", closeViewer);
-  vwPrev.addEventListener("click",  function () { viewerGoTo(current - 1); });
-  vwNext.addEventListener("click",  function () { viewerGoTo(current + 1); });
-
-  creditsBtn.addEventListener("click", function () { creditsOverlay.hidden = false; });
-  coClose.addEventListener("click",    function () { creditsOverlay.hidden = true;  });
-
-  document.addEventListener("keydown", function (e) {
-    if (viewer.classList.contains("open")) {
-      if (e.key === "Escape") {
-        if (!creditsOverlay.hidden) { creditsOverlay.hidden = true; }
-        else { closeViewer(); }
-      }
-      if (e.key === "ArrowLeft")  viewerGoTo(current - 1);
-      if (e.key === "ArrowRight") viewerGoTo(current + 1);
-    }
-  });
-
-  // Vimeo postMessage: register for pause/play on each iframe when ready;
-  // update is-paused class on the active viewer iframe's events
-  window.addEventListener("message", function (e) {
-    if (!String(e.origin).includes("vimeo.com")) return;
-    var data;
-    try { data = JSON.parse(e.data); } catch (_) { return; }
-
-    if (data.event === "ready") {
-      // Register pause/play listeners on whichever iframe just became ready
-      e.source.postMessage(JSON.stringify({ method: "addEventListener", value: "pause" }), "https://player.vimeo.com");
-      e.source.postMessage(JSON.stringify({ method: "addEventListener", value: "play"  }), "https://player.vimeo.com");
-    }
-    if (viewerIframe && e.source === viewerIframe.contentWindow) {
-      if (data.event === "pause") viewer.classList.add("is-paused");
-      if (data.event === "play")  viewer.classList.remove("is-paused");
-    }
-  });
-
-  document.querySelectorAll("[data-go-home]").forEach(function (el) {
-    el.addEventListener("click", function () {
-      if (viewer.classList.contains("open")) closeViewer();
-    });
-  });
 
   // -----------------------------------------------------------------------
   // Helpers
   // -----------------------------------------------------------------------
   function thumbUrl(p) {
-    return p.thumbnail || ("https://vumbnail.com/" + encodeURIComponent(p.vimeoId) + ".jpg");
+    return p._hiResThumb || p.thumbnail ||
+      ("https://vumbnail.com/" + encodeURIComponent(p.vimeoId) + ".jpg");
   }
+
+  // -----------------------------------------------------------------------
+  // Event listeners
+  // -----------------------------------------------------------------------
+
+  // About overlay
+  document.getElementById("aboutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    openAbout();
+  });
+  aoClose.addEventListener("click", closeAbout);
+  aboutOverlay.addEventListener("click", function (e) {
+    if (e.target === aboutOverlay) closeAbout(); // click outside content area
+  });
+
+  // Clicking the viewer background closes it.
+  // Protected: video iframe, credits overlay, the tight safe-zone around title/credits.
+  // .vw-nav panels have their own close handler (see below); buttons inside them navigate.
+  viewer.addEventListener("click", function (e) {
+    if (e.target.closest(".player-frame, .credits-overlay, .vw-bottom-safe, .vw-nav")) return;
+    closeViewer();
+  });
+
+  // Viewer controls
+  vwClose.addEventListener("click", closeViewer);
+
+  // Whole nav panel → close viewer (go back to marquee)
+  vwPrev.addEventListener("click", closeViewer);
+  vwNext.addEventListener("click", closeViewer);
+
+  // Arrow icon hit-area → navigate between projects (stops bubbling so panel doesn't also close)
+  vwPrev.querySelector(".vw-nav-hit").addEventListener("click", function (e) {
+    e.stopPropagation();
+    viewerGoTo(current - 1);
+  });
+  vwNext.querySelector(".vw-nav-hit").addEventListener("click", function (e) {
+    e.stopPropagation();
+    viewerGoTo(current + 1);
+  });
+  creditsBtn.addEventListener("click", function () { creditsOverlay.hidden = false; });
+  coClose.addEventListener("click",    function () { creditsOverlay.hidden = true;  });
+
+  // Keyboard
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (viewer.classList.contains("open")) {
+        if (!creditsOverlay.hidden) { creditsOverlay.hidden = true; return; }
+        closeViewer();
+      } else if (aboutOverlay.classList.contains("open")) {
+        closeAbout();
+      }
+    }
+    if (!viewer.classList.contains("open")) return;
+    if (e.key === "ArrowLeft")  viewerGoTo(current - 1);
+    if (e.key === "ArrowRight") viewerGoTo(current + 1);
+  });
+
+  // "Work" nav / logo close viewer + about
+  document.querySelectorAll("[data-go-home]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      if (viewer.classList.contains("open"))      closeViewer();
+      if (aboutOverlay.classList.contains("open")) closeAbout();
+    });
+  });
 
   // -----------------------------------------------------------------------
   // Init
   // -----------------------------------------------------------------------
   applySiteInfo();
-  initViewerPreloads();
   buildShowreel();
+  createPreloadIframes(); // kick off background buffering immediately
+  fetchHiResThumbs();     // async — replaces vumbnail with hi-res CDN thumbnails
 })();

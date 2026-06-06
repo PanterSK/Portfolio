@@ -61,7 +61,7 @@ const PROJECTS = [
     title:   "Cereal Killer",
     vimeoId: "1179516729",                 // just the number from the Vimeo link
     year:    "2026",
-    type:    "Comercial,                // e.g. Short Film, Documentary, Music Video
+    type:    "Commercial",              // e.g. Short Film, Documentary, Music Video
     description:
       "A short sentence or two describing this project. What it is, " +
       "what you were going for, anything you want people to know.",
@@ -92,7 +92,7 @@ const PROJECTS = [
     title:   "Fanta Commercial",
     vimeoId: "1160643004",
     year:    "2025",
-    type:    "Comercial",
+    type:    "Commercial",
     description:
       "One more example. Delete the ones you don't need and add your own.",
 
