@@ -43,14 +43,16 @@ a { color: inherit; text-decoration: none; }
    SHOWREEL MARQUEE
    ========================================================================= */
 .showreel {
-  height: calc(100vh - var(--hdr));
+  /* 100svh = small viewport height (URL bar visible) — never changes on scroll,
+     so the layout doesn't jump when the mobile browser chrome collapses. */
+  height: calc(100vh  - var(--hdr)); /* legacy fallback */
+  height: calc(100svh - var(--hdr)); /* stable on iOS/Android */
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  /* Vertical breathing room so hovering near screen edge doesn't pause marquee */
   padding: var(--sr-vpad) 0;
 }
 

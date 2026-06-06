@@ -102,7 +102,16 @@
     srTrack.addEventListener("mouseenter", function () { marqueeHovered = true;  });
     srTrack.addEventListener("mouseleave", function () { marqueeHovered = false; });
 
-    window.addEventListener("resize", sizeCards);
+    // Only resize cards when the viewport WIDTH changes (real resize or orientation
+    // change). On mobile, the browser URL bar collapsing only changes the HEIGHT —
+    // firing sizeCards() on that causes the layout to jump / flicker on every scroll.
+    var _prevResizeWidth = window.innerWidth;
+    window.addEventListener("resize", function () {
+      if (window.innerWidth !== _prevResizeWidth) {
+        _prevResizeWidth = window.innerWidth;
+        sizeCards();
+      }
+    });
     requestAnimationFrame(marqueeTick);
   }
 
@@ -154,13 +163,17 @@
     return card;
   }
 
-  // Cards fill viewport height; on portrait mobile constrain to viewport width
+  // Cards fill viewport height.
+  // Portrait mobile: cards are sized by HEIGHT and may be wider than the screen —
+  // the sr-wrap overflow:hidden clips the sides, giving tall cinematic thumbnails.
+  // All other layouts: constrain width to the viewport so cards don't overflow.
   function sizeCards() {
     if (typeof PROJECTS === "undefined" || !PROJECTS.length) return;
 
     var hdrH  = parseInt(getCssVar("--hdr"), 10) || 48;
     var isMobile = window.innerWidth <= 640;
     var isLandscapeSmall = window.innerHeight <= 500;
+    var isPortrait = window.innerHeight > window.innerWidth; // phone held upright
     // match --sr-vpad from CSS
     var vPadUnit = isLandscapeSmall ? 12 : (isMobile ? 16 : Math.min(64, Math.max(32, window.innerHeight * 0.05)));
     var vPad = vPadUnit * 2;
@@ -168,8 +181,11 @@
     var cardH = Math.max(140, window.innerHeight - hdrH - vPad);
     var cardW = Math.round(cardH * 16 / 9);
 
-    // On portrait mobile the height-driven width can exceed the viewport
-    if (cardW > window.innerWidth) {
+    // On portrait mobile we intentionally let the card be wider than the screen —
+    // the horizontal overflow is clipped by .sr-wrap (overflow:hidden) and the
+    // marquee scrolls it correctly. This gives a full-height thumbnail feel.
+    // On all other layouts, cap width to the viewport.
+    if (cardW > window.innerWidth && !isPortrait) {
       cardW = window.innerWidth;
       cardH = Math.round(cardW * 9 / 16);
     }
