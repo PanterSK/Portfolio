@@ -180,7 +180,7 @@
     });
 
     oneSetWidth  = cardW * PROJECTS.length;
-    marqueeSpeed = Math.max(0.2, cardW / (14 * 60));
+    marqueeSpeed = Math.max(0.1, cardW / (28 * 60)); // ~28 s to cross one card
   }
 
   function getCssVar(name) {
@@ -299,10 +299,13 @@
     playerFrame.appendChild(holder);
 
     if (typeof Vimeo !== "undefined" && Vimeo.Player) {
+      // Start muted=true so the browser allows autoplay, then unmute immediately
+      // once the player is ready. This is the only reliable cross-browser pattern
+      // for getting sound on a cross-origin Vimeo iframe triggered by a user click.
       player = new Vimeo.Player(holder, {
         id:         parseInt(p.vimeoId, 10),
         autoplay:   true,
-        muted:      false,
+        muted:      true,   // muted so the browser permits autoplay
         title:      false,
         byline:     false,
         portrait:   false,
@@ -311,15 +314,14 @@
       });
       player.on("pause", function () { viewer.classList.add("is-paused"); });
       player.on("play",  function () { viewer.classList.remove("is-paused"); });
-      // Once ready: ensure unmuted + best quality
       player.ready().then(function () {
+        // Unmute + full volume as soon as the player is initialised
         player.setMuted(false);
         player.setVolume(1);
         player.setQuality("1080p").catch(function () {
           player.setQuality("720p").catch(function () {});
         });
       });
-      player.play().catch(function () {});
     } else {
       // Fallback: plain iframe if SDK failed to load
       var iframe = document.createElement("iframe");

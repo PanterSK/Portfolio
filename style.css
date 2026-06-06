@@ -227,15 +227,16 @@ a { color: inherit; text-decoration: none; }
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   transition: opacity .25s;
-  opacity: .45;
+  opacity: .3;       /* panel at rest: subtle */
   overflow: hidden;
-  pointer-events: auto; /* whole panel is clickable */
+  pointer-events: auto;
   cursor: pointer;
 }
-.vw-nav:hover { opacity: 1; }
 .vw-nav--prev { left: 0; }
 .vw-nav--next { right: 0; }
-.viewer.is-paused .vw-nav { opacity: 1; }
+/* Panel opacity and arrow glow both trigger only when the hit-area is directly hovered */
+.vw-nav:has(.vw-nav-hit:hover) { opacity: .75; }
+.viewer.is-paused .vw-nav { opacity: .55; }
 
 /* The arrow hit-area — clicking here navigates, not closes */
 .vw-nav-hit {
@@ -245,12 +246,34 @@ a { color: inherit; text-decoration: none; }
   gap: .55rem;
   padding: 1.5rem .75rem;
   width: 100%;
+  border-radius: 4px;
+  transition: background .2s;
 }
+
+/* Arrow icon — glows only when the hit-area itself is hovered */
+.vw-nav-icon {
+  font-size: 1.5rem; line-height: 1;
+  transition: color .2s, text-shadow .2s;
+}
+.vw-nav-hit:hover .vw-nav-icon {
+  color: #fff;
+  text-shadow: 0 0 12px rgba(255,255,255,.9), 0 0 28px rgba(255,255,255,.5);
+}
+
+.vw-nav-label {
+  font-size: .58rem; letter-spacing: .07em; text-transform: uppercase;
+  color: rgba(255,255,255,.45); text-align: center; line-height: 1.35;
+  max-width: 90px;
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  transition: color .2s;
+}
+.vw-nav-hit:hover .vw-nav-label { color: rgba(255,255,255,.85); }
 
 /* Thumbnail — hidden until paused; fixed 16:9 dimensions so both sides match */
 .vw-nav-thumb {
   width: 90px;
-  height: 51px;   /* exact 16:9 of 90 px */
+  height: 51px;
   object-fit: cover; display: block;
   border-radius: 2px;
   opacity: 0;
@@ -259,15 +282,6 @@ a { color: inherit; text-decoration: none; }
   transition: opacity .35s ease, transform .35s ease;
 }
 .viewer.is-paused .vw-nav-thumb { opacity: 1; transform: scaleY(1); }
-
-.vw-nav-icon { font-size: 1.5rem; line-height: 1; }
-.vw-nav-label {
-  font-size: .58rem; letter-spacing: .07em; text-transform: uppercase;
-  color: rgba(255,255,255,.55); text-align: center; line-height: 1.35;
-  max-width: 90px;
-  overflow: hidden; text-overflow: ellipsis;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-}
 
 /* ---- Video area ---- */
 .vw-video {
