@@ -410,6 +410,16 @@
   creditsBtn.addEventListener("click", function () { creditsOverlay.hidden = false; });
   coClose.addEventListener("click",    function () { creditsOverlay.hidden = true;  });
 
+  // Mobile audio unlock — iOS/Android block unmuted autoplay in cross-origin iframes
+  // even with a user gesture. The first touch on the open viewer is itself a gesture;
+  // we use it to call setMuted(false) which iOS accepts as a user-initiated action.
+  viewer.addEventListener("touchstart", function () {
+    if (player && viewer.classList.contains("open")) {
+      player.setMuted(false).catch(function () {});
+      player.setVolume(1).catch(function () {});
+    }
+  }, { passive: true });
+
   // Keyboard
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {

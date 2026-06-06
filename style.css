@@ -398,6 +398,16 @@ a { color: inherit; text-decoration: none; }
   .ao-content { text-align: left; }
   .ao-contacts { justify-content: flex-start; }
 
+  /* Card title — always visible on mobile (no hover on touch screens) */
+  .reel-card-title {
+    opacity: 1;
+    font-size: clamp(.75rem, 3.5vw, .95rem); /* readable on any phone width */
+    letter-spacing: .07em;
+    padding: 2.5rem .9rem .9rem;             /* tighter gradient, shorter padding */
+    white-space: normal;                      /* wrap if title is long */
+    word-break: break-word;
+  }
+
   /* Viewer */
   .vw-nav  { width: 44px; }
   .vw-nav-label, .vw-nav-thumb { display: none; }
