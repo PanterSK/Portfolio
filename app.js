@@ -675,11 +675,13 @@
   // Mobile audio unlock — iOS/Android block unmuted autoplay in cross-origin iframes
   // even with a user gesture. The first touch on the open viewer is itself a gesture;
   // we use it to call setMuted(false) which iOS accepts as a user-initiated action.
-  viewer.addEventListener("touchstart", function () {
-    if (player && viewer.classList.contains("open")) {
-      player.setMuted(false).catch(function () {});
-      player.setVolume(1).catch(function () {});
-    }
+  // Skip if the touch is on the controls bar — those buttons manage mute/volume
+  // themselves, and unconditionally unmuting here fights with the mute-toggle click.
+  viewer.addEventListener("touchstart", function (e) {
+    if (!player || !viewer.classList.contains("open")) return;
+    if (e.target.closest("#vwControls")) return;
+    player.setMuted(false).catch(function () {});
+    player.setVolume(1).catch(function () {});
   }, { passive: true });
 
   // Keyboard
