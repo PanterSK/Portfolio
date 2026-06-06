@@ -639,8 +639,10 @@ a { color: inherit; text-decoration: none; }
    RESPONSIVE — Landscape mobile / small tablets
    ========================================================================= */
 @media (max-height: 500px) {
-  :root { --hdr: 64px; --sr-vpad: .75rem; --vwc-h: 52px; }
-  .site-header { padding: .5rem var(--pad); gap: .35rem; }
+  :root { --hdr: 44px; --sr-vpad: .75rem; --vwc-h: 52px; }
+  .site-header { padding: .2rem var(--pad); gap: .15rem; }
+  .site-name  { font-size: .6rem; }
+  .site-nav a { font-size: .5rem; margin: 0 .5rem; }
 
   /* Close button above nav panel in landscape too */
   .vw-top  { height: 44px; z-index: 12; }

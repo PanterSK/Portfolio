@@ -265,8 +265,8 @@
     var vPad = vPadUnit * 2;
 
     var cardH = Math.max(140, window.innerHeight - hdrH - vPad);
-    // Desktop: 20% smaller than full height. Mobile: 50% smaller (0.4 = half of 0.8).
-    cardH = Math.round(cardH * (isMobile ? 0.4 : 0.8));
+    // Desktop: ×0.8. Landscape mobile: ×0.88 (10% bigger than desktop base). Portrait mobile: ×0.4.
+    cardH = Math.round(cardH * (isMobile ? 0.4 : isLandscapeSmall ? 0.88 : 0.8));
     var cardW = Math.round(cardH * 16 / 9);
 
     // On portrait mobile we intentionally let the card be wider than the screen —
