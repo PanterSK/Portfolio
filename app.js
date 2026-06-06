@@ -53,6 +53,9 @@
   var marqueeHovered = false; // true while cursor is over the track (slow down only)
   var marqueeFf      = 0;     // fast-forward multiplier: -1 rewind, 0 normal, +1 forward
   var oneSetWidth    = 0;
+  var isDragging     = false; // true while finger is dragging the showreel
+  var dragStartX     = 0;
+  var dragStartPos   = 0;
 
   // -----------------------------------------------------------------------
   // Site info (header / footer only — about content loads in openAbout)
@@ -118,6 +121,25 @@
 
     srTrack.addEventListener("mouseenter", function () { marqueeHovered = true;  });
     srTrack.addEventListener("mouseleave", function () { marqueeHovered = false; });
+
+    // Touch drag — finger-scroll the showreel; auto-scroll resumes on release
+    var srWrap = srTrack.parentElement;
+    srWrap.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1) return;
+      isDragging   = true;
+      dragStartX   = e.touches[0].clientX;
+      dragStartPos = marqueePos;
+    }, { passive: true });
+    srWrap.addEventListener("touchmove", function (e) {
+      if (!isDragging || e.touches.length !== 1) return;
+      var dx = e.touches[0].clientX - dragStartX;
+      marqueePos = dragStartPos + dx;
+      while (marqueePos > 0)             marqueePos -= oneSetWidth;
+      while (marqueePos <= -oneSetWidth) marqueePos += oneSetWidth;
+      srTrack.style.transform = "translateX(" + marqueePos + "px)";
+    }, { passive: true });
+    srWrap.addEventListener("touchend",    function () { isDragging = false; });
+    srWrap.addEventListener("touchcancel", function () { isDragging = false; });
 
     // Only resize cards when the viewport WIDTH changes (real resize or orientation
     // change). On mobile, the browser URL bar collapsing only changes the HEIGHT —
@@ -249,7 +271,7 @@
   }
 
   function marqueeTick() {
-    if (!marqueePaused && oneSetWidth > 0) {
+    if (!marqueePaused && !isDragging && oneSetWidth > 0) {
       var speed;
       if (marqueeFf !== 0) {
         // Fast-forward / rewind hot-zones — ~6× normal speed, either direction
