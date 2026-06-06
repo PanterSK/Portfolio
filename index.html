@@ -22,6 +22,8 @@
       <div class="sr-wrap">
         <div class="sr-track" id="srTrack"></div>
       </div>
+      <button class="sr-ff sr-ff--prev" id="srFfPrev" aria-label="Rewind showreel">⏮</button>
+      <button class="sr-ff sr-ff--next" id="srFfNext" aria-label="Fast-forward showreel">⏭</button>
     </section>
   </main>
 
@@ -36,40 +38,70 @@
     </div>
   </div>
 
-  <!-- ===== Expanded video viewer ===== -->
+  <!-- ===== Expanded video viewer — full-bleed; all UI overlays the video ===== -->
   <div id="viewer" class="viewer" aria-hidden="true">
+
+    <!-- Video fills the entire viewport -->
+    <div class="vw-video">
+      <div id="playerFrame" class="player-frame"></div>
+      <div class="vw-click-toggle" id="vwClickToggle"></div>
+      <!-- Centre play icon: visible only while paused -->
+      <div class="vw-center-icon" id="vwCenterIcon" aria-hidden="true">▶</div>
+      <div class="vw-controls" id="vwControls">
+        <button class="vwc-btn vwc-play" id="vwcPlay" aria-label="Play / pause">▶</button>
+        <span class="vwc-time" id="vwcTime">0:00 / 0:00</span>
+        <div class="vwc-progress" id="vwcProgress">
+          <div class="vwc-progress-track">
+            <div class="vwc-progress-fill" id="vwcProgressFill"></div>
+            <div class="vwc-progress-handle" id="vwcProgressHandle"></div>
+          </div>
+        </div>
+        <button class="vwc-btn vwc-mute" id="vwcMute" aria-label="Mute / unmute">♪</button>
+        <input class="vwc-volume" id="vwcVolume" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+        <button class="vwc-btn vwc-fullscreen" id="vwcFullscreen" aria-label="Fullscreen">⛶</button>
+      </div>
+    </div>
+
+    <!-- Header overlaid on top of video -->
     <div class="vw-top">
       <button class="vw-name" id="vwName" data-go-home></button>
       <button class="vw-close" id="vwClose" aria-label="Close">×</button>
     </div>
-    <button class="vw-nav vw-nav--prev" id="vwPrev" aria-label="Previous project">
-      <div class="vw-nav-hit">
-        <img class="vw-nav-thumb" id="vwPrevThumb" alt="">
-        <span class="vw-nav-icon">‹</span>
-        <span class="vw-nav-label" id="vwPrevLabel"></span>
-      </div>
-    </button>
-    <button class="vw-nav vw-nav--next" id="vwNext" aria-label="Next project">
-      <div class="vw-nav-hit">
-        <img class="vw-nav-thumb" id="vwNextThumb" alt="">
-        <span class="vw-nav-icon">›</span>
-        <span class="vw-nav-label" id="vwNextLabel"></span>
-      </div>
-    </button>
-    <div class="vw-video">
-      <div id="playerFrame" class="player-frame"></div>
-    </div>
+
+    <!-- Title + Credits overlaid just above the controls bar -->
     <div class="vw-bottom">
       <div class="vw-bottom-safe">
         <p class="vw-title" id="vwTitle"></p>
         <button class="vw-credits-btn" id="creditsBtn">Credits</button>
       </div>
     </div>
+
+    <!-- Side nav panels overlaid on left/right edges -->
+    <button class="vw-nav vw-nav--prev" id="vwPrev" aria-label="Previous project">
+      <div class="vw-nav-hit">
+        <div class="vw-nav-thumb-wrap" id="vwPrevThumbWrap">
+          <img class="vw-nav-thumb" id="vwPrevThumb" alt="">
+        </div>
+        <span class="vw-nav-icon">‹</span>
+        <span class="vw-nav-label" id="vwPrevLabel"></span>
+      </div>
+    </button>
+    <button class="vw-nav vw-nav--next" id="vwNext" aria-label="Next project">
+      <div class="vw-nav-hit">
+        <div class="vw-nav-thumb-wrap" id="vwNextThumbWrap">
+          <img class="vw-nav-thumb" id="vwNextThumb" alt="">
+        </div>
+        <span class="vw-nav-icon">›</span>
+        <span class="vw-nav-label" id="vwNextLabel"></span>
+      </div>
+    </button>
+
     <div class="credits-overlay" id="creditsOverlay" hidden>
       <p class="co-title" id="coTitle"></p>
       <dl class="co-list" id="coList"></dl>
       <button class="co-close" id="coClose">×</button>
     </div>
+  </div>
   </div>
 
   <footer class="site-footer">

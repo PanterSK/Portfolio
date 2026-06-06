@@ -15,11 +15,25 @@
   var vwClose        = document.getElementById("vwClose");
   var vwPrev         = document.getElementById("vwPrev");
   var vwNext         = document.getElementById("vwNext");
-  var vwPrevLabel    = document.getElementById("vwPrevLabel");
-  var vwNextLabel    = document.getElementById("vwNextLabel");
-  var vwPrevThumb    = document.getElementById("vwPrevThumb");
-  var vwNextThumb    = document.getElementById("vwNextThumb");
+  var vwPrevLabel      = document.getElementById("vwPrevLabel");
+  var vwNextLabel      = document.getElementById("vwNextLabel");
+  var vwPrevThumb      = document.getElementById("vwPrevThumb");
+  var vwNextThumb      = document.getElementById("vwNextThumb");
+  var vwPrevThumbWrap  = document.getElementById("vwPrevThumbWrap");
+  var vwNextThumbWrap  = document.getElementById("vwNextThumbWrap");
   var playerFrame    = document.getElementById("playerFrame");
+  var vwClickToggle    = document.getElementById("vwClickToggle");
+  var vwControls       = document.getElementById("vwControls");
+  var vwcPlay          = document.getElementById("vwcPlay");
+  var vwcTime          = document.getElementById("vwcTime");
+  var vwcProgress      = document.getElementById("vwcProgress");
+  var vwcProgressFill  = document.getElementById("vwcProgressFill");
+  var vwcProgressHandle= document.getElementById("vwcProgressHandle");
+  var vwcMute          = document.getElementById("vwcMute");
+  var vwcVolume        = document.getElementById("vwcVolume");
+  var vwcFullscreen    = document.getElementById("vwcFullscreen");
+  var srFfPrev       = document.getElementById("srFfPrev");
+  var srFfNext       = document.getElementById("srFfNext");
   var creditsBtn     = document.getElementById("creditsBtn");
   var creditsOverlay = document.getElementById("creditsOverlay");
   var coClose        = document.getElementById("coClose");
@@ -29,12 +43,15 @@
   // --- State -------------------------------------------------------------
   var current      = 0;
   var player       = null;   // active Vimeo.Player
+  var playerDuration = 0;
+  var isScrubbing    = false;
 
   // Marquee
   var marqueePos     = 0;
   var marqueeSpeed   = 0.6;
   var marqueePaused  = false; // true while viewer is open (full stop)
   var marqueeHovered = false; // true while cursor is over the track (slow down only)
+  var marqueeFf      = 0;     // fast-forward multiplier: -1 rewind, 0 normal, +1 forward
   var oneSetWidth    = 0;
 
   // -----------------------------------------------------------------------
@@ -136,26 +153,52 @@
 
     card.appendChild(inner);
 
-    // Hover → play muted background preview
-    card.addEventListener("mouseenter", function () {
-      if (!inner.querySelector(".reel-preview")) {
-        var iframe = document.createElement("iframe");
-        iframe.className = "reel-preview";
-        iframe.setAttribute("allow", "autoplay");
-        iframe.src =
-          "https://player.vimeo.com/video/" + encodeURIComponent(p.vimeoId) +
-          "?background=1&autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&dnt=1";
-        inner.appendChild(iframe);
-        setTimeout(function () {
-          if (iframe.parentNode) card.classList.add("preview-ready");
-        }, 350);
+    // Hover → play muted background preview.
+    // The iframe + player are created once (lazily, on first hover) and kept
+    // alive — later hovers just resume an already-warm player, so playback
+    // appears instantly with no reload delay or gray flash. The thumbnail
+    // only fades out once the preview is actually *playing*, never on a guess-timer.
+    var previewIframe = null;
+    var previewPlayer = null;
+    var previewReady  = false;
+
+    function ensurePreview() {
+      if (previewIframe) return;
+      previewIframe = document.createElement("iframe");
+      previewIframe.className = "reel-preview";
+      previewIframe.setAttribute("allow", "autoplay");
+      previewIframe.src =
+        "https://player.vimeo.com/video/" + encodeURIComponent(p.vimeoId) +
+        "?background=1&autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&dnt=1";
+      inner.appendChild(previewIframe);
+
+      if (typeof Vimeo !== "undefined" && Vimeo.Player) {
+        previewPlayer = new Vimeo.Player(previewIframe);
+        previewPlayer.on("playing", function () {
+          previewReady = true;
+          if (card.matches(":hover")) card.classList.add("preview-ready");
+        });
+      } else {
+        // No SDK to confirm playback — fall back to a short guess-timer
+        previewIframe.addEventListener("load", function () {
+          setTimeout(function () {
+            previewReady = true;
+            if (card.matches(":hover")) card.classList.add("preview-ready");
+          }, 250);
+        });
       }
+    }
+
+    card.addEventListener("mouseenter", function () {
+      ensurePreview();
+      if (previewPlayer) previewPlayer.play().catch(function () {});
+      // Already loaded once before — resuming is instant, no need to wait again
+      if (previewReady) card.classList.add("preview-ready");
     });
 
     card.addEventListener("mouseleave", function () {
       card.classList.remove("preview-ready");
-      var prev = inner.querySelector(".reel-preview");
-      if (prev) prev.remove();
+      if (previewPlayer) previewPlayer.pause().catch(function () {});
     });
 
     card.addEventListener("click", function () { openViewer(index); });
@@ -179,6 +222,7 @@
     var vPad = vPadUnit * 2;
 
     var cardH = Math.max(140, window.innerHeight - hdrH - vPad);
+    cardH = Math.round(cardH * 0.8); // ~20% smaller showreel
     var cardW = Math.round(cardH * 16 / 9);
 
     // On portrait mobile we intentionally let the card be wider than the screen —
@@ -205,15 +249,21 @@
 
   function marqueeTick() {
     if (!marqueePaused && oneSetWidth > 0) {
-      // Hover slows to 12 % of normal speed; otherwise full speed
-      var speed = marqueeHovered ? marqueeSpeed * 0.12 : marqueeSpeed;
+      var speed;
+      if (marqueeFf !== 0) {
+        // Fast-forward / rewind hot-zones — ~6× normal speed, either direction
+        speed = marqueeFf * marqueeSpeed * 6;
+      } else {
+        // Hover slows to 12 % of normal speed; otherwise full speed
+        speed = marqueeHovered ? marqueeSpeed * 0.12 : marqueeSpeed;
+      }
       marqueePos -= speed;
+      if (marqueePos > 0) marqueePos -= oneSetWidth;
       if (marqueePos <= -oneSetWidth) marqueePos += oneSetWidth;
       srTrack.style.transform = "translateX(" + marqueePos + "px)";
     }
     requestAnimationFrame(marqueeTick);
   }
-
   // -----------------------------------------------------------------------
   // Background preload — tiny 2×2 px muted iframes, one per video.
   // These autoplay silently at page load, populating the browser's CDN cache
@@ -286,8 +336,8 @@
     var nextIdx = (current + 1) % n;
     vwPrevLabel.textContent = PROJECTS[prevIdx].title;
     vwNextLabel.textContent = PROJECTS[nextIdx].title;
-    vwPrevThumb.src = thumbUrl(PROJECTS[prevIdx]);
-    vwNextThumb.src = thumbUrl(PROJECTS[nextIdx]);
+    setNavPreview(vwPrevThumbWrap, vwPrevThumb, PROJECTS[prevIdx]);
+    setNavPreview(vwNextThumbWrap, vwNextThumb, PROJECTS[nextIdx]);
     vwPrev.style.visibility = n > 1 ? "" : "hidden";
     vwNext.style.visibility = n > 1 ? "" : "hidden";
 
@@ -309,6 +359,9 @@
     destroyPlayer();
     playerFrame.innerHTML = "";
     viewer.classList.remove("is-paused");
+    vwControls.style.display = "";
+    vwClickToggle.style.display = "";
+    resetPlayerControls();
 
     var holder = document.createElement("div");
     holder.style.cssText = "position:absolute;inset:0;width:100%;height:100%;";
@@ -325,21 +378,28 @@
         title:      false,
         byline:     false,
         portrait:   false,
+        controls:   false,  // we render our own playhead / volume / fullscreen UI
         dnt:        true,
         responsive: false
       });
       player.on("pause", function () { viewer.classList.add("is-paused"); });
       player.on("play",  function () { viewer.classList.remove("is-paused"); });
+      bindPlayerControls(player);
       player.ready().then(function () {
         // Unmute + full volume as soon as the player is initialised
         player.setMuted(false);
         player.setVolume(1);
+        vwcMute.textContent = "♪";
+        vwcVolume.value = 1;
         player.setQuality("1080p").catch(function () {
           player.setQuality("720p").catch(function () {});
         });
       });
     } else {
-      // Fallback: plain iframe if SDK failed to load
+      // Fallback: plain iframe if SDK failed to load — no API access, so hide our
+      // custom controls and let Vimeo's native bar show instead.
+      vwControls.style.display = "none";
+      vwClickToggle.style.display = "none";
       var iframe = document.createElement("iframe");
       iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture");
       iframe.setAttribute("allowfullscreen", "");
@@ -355,11 +415,167 @@
     document.body.style.overflow = "hidden";
   }
 
+  // Creates/replaces a muted looping background preview iframe inside a nav-thumb-wrap,
+  // crossfading over the static thumbnail once the video actually starts playing.
+  function setNavPreview(wrap, imgEl, p) {
+    var old = wrap.querySelector(".vw-nav-preview");
+    if (old) old.remove();
+    wrap.classList.remove("preview-ready");
+    imgEl.src = thumbUrl(p);
+
+    var iframe = document.createElement("iframe");
+    iframe.className = "vw-nav-preview";
+    iframe.setAttribute("allow", "autoplay");
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.tabIndex = -1;
+    iframe.src =
+      "https://player.vimeo.com/video/" + encodeURIComponent(p.vimeoId) +
+      "?background=1&autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&dnt=1";
+    wrap.appendChild(iframe);
+
+    if (typeof Vimeo !== "undefined" && Vimeo.Player) {
+      var pv = new Vimeo.Player(iframe);
+      pv.on("playing", function () { wrap.classList.add("preview-ready"); });
+    } else {
+      iframe.addEventListener("load", function () {
+        setTimeout(function () { wrap.classList.add("preview-ready"); }, 300);
+      });
+    }
+  }
+
   function destroyPlayer() {
     if (player && typeof player.destroy === "function") {
       try { player.destroy(); } catch (e) {}
     }
     player = null;
+  }
+
+  // -----------------------------------------------------------------------
+  // Custom player controls (play/pause, playhead, volume, fullscreen)
+  // -----------------------------------------------------------------------
+  function formatTime(s) {
+    s = Math.max(0, Math.floor(s || 0));
+    var m = Math.floor(s / 60);
+    var sec = s % 60;
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
+  }
+
+  function resetPlayerControls() {
+    playerDuration = 0;
+    isScrubbing = false;
+    vwcPlay.textContent = "▶";
+    vwcProgressFill.style.width = "0%";
+    vwcProgressHandle.style.left = "0%";
+    vwcTime.textContent = "0:00 / 0:00";
+    vwcMute.textContent = "♪";
+    vwcVolume.value = 1;
+  }
+
+  function setProgress(frac) {
+    frac = Math.min(1, Math.max(0, frac));
+    vwcProgressFill.style.width  = (frac * 100) + "%";
+    vwcProgressHandle.style.left = (frac * 100) + "%";
+  }
+
+  function scrubFromEvent(e) {
+    var rect = vwcProgress.getBoundingClientRect();
+    var x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    return Math.min(1, Math.max(0, rect.width ? x / rect.width : 0));
+  }
+
+  // Bound once — these always act on whatever `player` currently is.
+  function initPlayerControlEvents() {
+    function togglePlay() {
+      if (!player) return;
+      player.getPaused().then(function (paused) {
+        if (paused) player.play(); else player.pause();
+      });
+    }
+
+    vwcPlay.addEventListener("click", togglePlay);
+
+    // Click anywhere in the middle of the video to play/pause
+    vwClickToggle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      togglePlay();
+    });
+
+    function startScrub(e) {
+      if (!player || !playerDuration) return;
+      isScrubbing = true;
+      var frac = scrubFromEvent(e);
+      setProgress(frac);
+      player.setCurrentTime(frac * playerDuration);
+    }
+    function moveScrub(e) {
+      if (!isScrubbing) return;
+      var frac = scrubFromEvent(e);
+      setProgress(frac);
+      player.setCurrentTime(frac * playerDuration);
+    }
+    function endScrub() { isScrubbing = false; }
+
+    vwcProgress.addEventListener("pointerdown", function (e) {
+      startScrub(e);
+      vwcProgress.setPointerCapture(e.pointerId);
+    });
+    vwcProgress.addEventListener("pointermove", moveScrub);
+    vwcProgress.addEventListener("pointerup",     endScrub);
+    vwcProgress.addEventListener("pointercancel", endScrub);
+
+    vwcMute.addEventListener("click", function () {
+      if (!player) return;
+      player.getMuted().then(function (muted) {
+        var next = !muted;
+        player.setMuted(next);
+        vwcMute.textContent = next ? "✕" : "♪";
+      });
+    });
+
+    vwcVolume.addEventListener("input", function () {
+      if (!player) return;
+      var v = parseFloat(vwcVolume.value);
+      player.setVolume(v);
+      var muted = v <= 0;
+      player.setMuted(muted);
+      vwcMute.textContent = muted ? "✕" : "♪";
+    });
+
+    vwcFullscreen.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if (viewer.requestFullscreen) {
+        viewer.requestFullscreen();
+      }
+    });
+
+    // Prevent clicks on the controls bar from bubbling to the viewer
+    // (which would otherwise close it / trigger nav panels).
+    vwControls.addEventListener("click", function (e) { e.stopPropagation(); });
+  }
+
+  // Bound fresh for each new Vimeo.Player instance.
+  function bindPlayerControls(p) {
+    resetPlayerControls();
+
+    p.getDuration().then(function (d) {
+      playerDuration = d;
+      vwcTime.textContent = "0:00 / " + formatTime(d);
+    });
+
+    p.on("timeupdate", function (data) {
+      if (!playerDuration) playerDuration = data.duration;
+      if (!isScrubbing) setProgress(data.percent);
+      vwcTime.textContent = formatTime(data.seconds) + " / " + formatTime(data.duration);
+    });
+
+    p.on("play",  function () { vwcPlay.textContent = "❚❚"; });
+    p.on("pause", function () { vwcPlay.textContent = "▶";  });
+
+    p.on("volumechange", function (data) {
+      vwcVolume.value = data.volume;
+    });
   }
 
   function closeViewer() {
@@ -423,6 +639,12 @@
     e.stopPropagation();
     viewerGoTo(current + 1);
   });
+  // Showreel fast-forward / rewind hot-zones
+  srFfNext.addEventListener("mouseenter", function () { marqueeFf =  1; });
+  srFfNext.addEventListener("mouseleave", function () { marqueeFf =  0; });
+  srFfPrev.addEventListener("mouseenter", function () { marqueeFf = -1; });
+  srFfPrev.addEventListener("mouseleave", function () { marqueeFf =  0; });
+
   creditsBtn.addEventListener("click", function () { creditsOverlay.hidden = false; });
   coClose.addEventListener("click",    function () { creditsOverlay.hidden = true;  });
 
@@ -463,6 +685,7 @@
   // Init
   // -----------------------------------------------------------------------
   applySiteInfo();
+  initPlayerControlEvents();
   buildShowreel();
   createPreloadIframes(); // kick off background buffering immediately
   fetchHiResThumbs();     // async — replaces vumbnail with hi-res CDN thumbnails

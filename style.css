@@ -9,8 +9,9 @@
   --muted:    #6a6a67;
   --line:     #1c1c1b;
   --pad:      clamp(1.25rem, 4vw, 3rem);
-  --hdr:      48px;
+  --hdr:      88px;
   --sr-vpad:  clamp(2rem, 5vh, 4rem);  /* top + bottom gap around marquee */
+  --vwc-h:    52px; /* custom player-controls bar height — vw-nav stops short of it */
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,15 +28,17 @@ a { color: inherit; text-decoration: none; }
 /* ===== Header ===== */
 .site-header {
   position: sticky; top: 0; z-index: 50;
-  height: var(--hdr);
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0 var(--pad);
+  min-height: var(--hdr);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  gap: .6rem;
+  padding: 1rem var(--pad);
   background: var(--bg);
+  text-align: center;
 }
-.site-name { font-size: .82rem; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+.site-name { font-size: .95rem; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
 .site-nav a {
   font-size: .7rem; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--muted); margin-left: 2rem; transition: color .2s;
+  color: var(--muted); margin: 0 1rem; transition: color .2s;
 }
 .site-nav a:hover { color: var(--ink); }
 
@@ -66,6 +69,36 @@ a { color: inherit; text-decoration: none; }
 }
 .showreel::before { left:  0; background: linear-gradient(to right, var(--bg), transparent); }
 .showreel::after  { right: 0; background: linear-gradient(to left,  var(--bg), transparent); }
+
+/* Fast-forward / rewind hot-zones — hover to speed the marquee up */
+.sr-ff {
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 50%;
+  color: var(--ink);
+  font-size: 1.1rem;
+  letter-spacing: .1em;
+  cursor: pointer;
+  opacity: .55;
+  transition: opacity .25s ease, background .25s ease, border-color .25s ease;
+}
+.sr-ff:hover,
+.sr-ff:focus-visible {
+  opacity: 1;
+  background: rgba(0,0,0,.55);
+  border-color: rgba(255,255,255,.4);
+}
+.sr-ff--prev { left: 1.25rem; }
+.sr-ff--next { right: 1.25rem; }
 
 .sr-wrap { width: 100%; overflow: hidden; }
 
@@ -187,108 +220,20 @@ a { color: inherit; text-decoration: none; }
 /* =========================================================================
    EXPANDED VIEWER
    ========================================================================= */
+/* =========================================================================
+   EXPANDED VIEWER — full-bleed video; all UI layers are absolute overlays
+   ========================================================================= */
 .viewer {
   position: fixed; inset: 0; z-index: 100;
   background: #000; color: var(--ink);
-  display: flex; flex-direction: column;
   opacity: 0; visibility: hidden;
   transition: opacity .35s ease;
 }
 .viewer.open { opacity: 1; visibility: visible; }
 
-/* ---- Top bar: site name + close ---- */
-.vw-top {
-  flex-shrink: 0;
-  height: 46px;
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-}
-.vw-name {
-  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
-  color: rgba(255,255,255,.7);
-  /* reset <button> styles */
-  background: none; border: none; font-family: inherit;
-  cursor: pointer; transition: color .2s;
-}
-.vw-name:hover { color: #fff; }
-.vw-close {
-  position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%);
-  background: none; border: none;
-  color: rgba(255,255,255,.6); font-size: 1.5rem; line-height: 1;
-  cursor: pointer; transition: color .2s;
-}
-.vw-close:hover { color: #fff; }
-
-/* ---- Navigation panels — full panel is a "go back" zone ---- */
-.vw-nav {
-  position: absolute;
-  top: 0; bottom: 0;
-  width: clamp(64px, 9vw, 130px);
-  z-index: 10;
-  background: none; border: none; color: var(--ink);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  transition: opacity .25s;
-  opacity: .3;       /* panel at rest: subtle */
-  overflow: hidden;
-  pointer-events: auto;
-  cursor: pointer;
-}
-.vw-nav--prev { left: 0; }
-.vw-nav--next { right: 0; }
-/* Panel opacity and arrow glow both trigger only when the hit-area is directly hovered */
-.vw-nav:has(.vw-nav-hit:hover) { opacity: .75; }
-.viewer.is-paused .vw-nav { opacity: .55; }
-
-/* The arrow hit-area — clicking here navigates, not closes */
-.vw-nav-hit {
-  cursor: pointer;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: .55rem;
-  padding: 1.5rem .75rem;
-  width: 100%;
-  border-radius: 4px;
-  transition: background .2s;
-}
-
-/* Arrow icon — glows only when the hit-area itself is hovered */
-.vw-nav-icon {
-  font-size: 1.5rem; line-height: 1;
-  transition: color .2s, text-shadow .2s;
-}
-.vw-nav-hit:hover .vw-nav-icon {
-  color: #fff;
-  text-shadow: 0 0 12px rgba(255,255,255,.9), 0 0 28px rgba(255,255,255,.5);
-}
-
-.vw-nav-label {
-  font-size: .58rem; letter-spacing: .07em; text-transform: uppercase;
-  color: rgba(255,255,255,.45); text-align: center; line-height: 1.35;
-  max-width: 90px;
-  overflow: hidden; text-overflow: ellipsis;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  transition: color .2s;
-}
-.vw-nav-hit:hover .vw-nav-label { color: rgba(255,255,255,.85); }
-
-/* Thumbnail — hidden until paused; fixed 16:9 dimensions so both sides match */
-.vw-nav-thumb {
-  width: 90px;
-  height: 51px;
-  object-fit: cover; display: block;
-  border-radius: 2px;
-  opacity: 0;
-  transform: scaleY(0);
-  transform-origin: top center;
-  transition: opacity .35s ease, transform .35s ease;
-}
-.viewer.is-paused .vw-nav-thumb { opacity: 1; transform: scaleY(1); }
-
-/* ---- Video area ---- */
+/* ---- Video fills the entire viewer ---- */
 .vw-video {
-  flex: 1; min-height: 0;
-  position: relative;
+  position: absolute; inset: 0;
 }
 .player-frame {
   position: absolute; inset: 0;
@@ -298,20 +243,146 @@ a { color: inherit; text-decoration: none; }
   position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
 }
 
-/* ---- Bottom bar ---- */
-.vw-bottom {
-  flex-shrink: 0;
-  height: 58px;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  cursor: pointer; /* clicking outside safe zone closes viewer */
+/* Click anywhere on the video to play/pause (stops below controls bar) */
+.vw-click-toggle {
+  position: absolute; inset: 0;
+  bottom: var(--vwc-h);
+  cursor: pointer;
+  z-index: 1;
 }
-/* Safe zone — sized just around the text + a small buffer */
+
+/* ---- Centre play icon — shown only while paused ---- */
+.vw-center-icon {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(.75);
+  z-index: 2;
+  font-size: 3.75rem;
+  color: rgba(255,255,255,.88);
+  text-shadow: 0 2px 32px rgba(0,0,0,.7);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+}
+.viewer.is-paused .vw-center-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ---- Custom player controls ---- */
+.vw-controls {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: var(--vwc-h);
+  z-index: 8;
+  display: flex; align-items: center; gap: .9rem;
+  padding: 0 1.25rem;
+  background: linear-gradient(to top, rgba(0,0,0,.7) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.vw-video:hover .vw-controls,
+.viewer.is-paused .vw-controls,
+.vw-controls:focus-within { opacity: 1; }
+
+.vwc-btn {
+  flex-shrink: 0;
+  background: none; border: 0;
+  color: rgba(255,255,255,.85);
+  font-size: 1rem; line-height: 1;
+  cursor: pointer;
+  transition: color .2s;
+}
+.vwc-btn:hover { color: #fff; }
+.vwc-play { font-size: .9rem; min-width: 1.2rem; text-align: center; }
+
+.vwc-time {
+  flex-shrink: 0;
+  font-size: .65rem; letter-spacing: .04em;
+  color: rgba(255,255,255,.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.vwc-progress {
+  flex: 1;
+  display: flex; align-items: center;
+  cursor: pointer;
+  padding: .6rem 0;
+  touch-action: none;
+}
+.vwc-progress-track {
+  position: relative;
+  width: 100%; height: 3px;
+  background: rgba(255,255,255,.25);
+  border-radius: 2px;
+  transition: height .15s ease;
+}
+.vwc-progress:hover .vwc-progress-track { height: 5px; }
+.vwc-progress-fill {
+  position: absolute; top: 0; left: 0; bottom: 0;
+  width: 0%;
+  background: var(--ink);
+  border-radius: 2px;
+}
+.vwc-progress-handle {
+  position: absolute; top: 50%; left: 0%;
+  width: 11px; height: 11px;
+  background: var(--ink);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform .15s ease;
+}
+.vwc-progress:hover .vwc-progress-handle { transform: translate(-50%, -50%) scale(1); }
+
+.vwc-volume {
+  flex-shrink: 0;
+  width: 70px;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+.vwc-fullscreen { font-size: 1.05rem; }
+
+/* ---- Header — overlaid at the top of the video ---- */
+.vw-top {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 72px;
+  z-index: 6;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(to bottom, rgba(0,0,0,.6) 0%, transparent 100%);
+  pointer-events: none; /* gradient area passes clicks through to video */
+}
+.vw-name {
+  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(255,255,255,.7);
+  background: none; border: none; font-family: inherit;
+  cursor: pointer; transition: color .2s;
+  pointer-events: auto;
+}
+.vw-name:hover { color: #fff; }
+.vw-close {
+  position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none;
+  color: rgba(255,255,255,.6); font-size: 1.5rem; line-height: 1;
+  cursor: pointer; transition: color .2s;
+  pointer-events: auto;
+}
+.vw-close:hover { color: #fff; }
+
+/* ---- Title + Credits — overlaid just above the controls bar ---- */
+.vw-bottom {
+  position: absolute; left: 0; right: 0;
+  bottom: var(--vwc-h);
+  z-index: 6;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  padding-bottom: .65rem;
+  pointer-events: none;
+}
 .vw-bottom-safe {
   display: inline-flex; flex-direction: column;
   align-items: center; gap: .25rem;
   padding: .35rem 2.5rem .2rem;
-  cursor: default; /* not a close target */
+  pointer-events: auto;
 }
 .vw-title { font-size: .75rem; letter-spacing: .13em; text-transform: uppercase; }
 .vw-credits-btn {
@@ -321,6 +392,115 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer; transition: color .2s;
 }
 .vw-credits-btn:hover { color: rgba(255,255,255,.9); }
+
+/* ---- Navigation panels overlaid on left/right edges ---- */
+.vw-nav {
+  position: absolute;
+  top: 0; bottom: var(--vwc-h);
+  width: clamp(56px, 7vw, 80px); /* compact by default — just arrow */
+  z-index: 10;
+  background: none; border: none; color: var(--ink);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding-top: 5vh; /* shift content ~5% below center */
+  transition: opacity .25s ease, width .35s ease;
+  opacity: .5; /* always visible when playing */
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.vw-nav--prev { left: 0; }
+.vw-nav--next { right: 0; }
+.vw-nav:has(.vw-nav-hit:hover) { opacity: .85; }
+
+/* Paused: expand to show preview + arrow side by side */
+.viewer.is-paused .vw-nav { opacity: 1; width: 280px; }
+
+/* The arrow hit-area — column by default (playing) */
+.vw-nav-hit {
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: .55rem;
+  padding: .75rem;
+  width: 100%;
+  transition: background .2s;
+}
+
+/* Paused: grid layout — [thumb | arrow] / [label | .] for prev
+                          [arrow | thumb] / [. | label] for next */
+.viewer.is-paused .vw-nav--prev .vw-nav-hit {
+  display: grid;
+  grid-template-areas: "thumb icon" "label .   ";
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: .4rem .6rem;
+  padding: 1rem .75rem 1rem 0;
+}
+.viewer.is-paused .vw-nav--next .vw-nav-hit {
+  display: grid;
+  grid-template-areas: "icon thumb" ".    label";
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: .4rem .6rem;
+  padding: 1rem 0 1rem .75rem;
+}
+.viewer.is-paused .vw-nav-thumb-wrap { grid-area: thumb; }
+.viewer.is-paused .vw-nav-icon       { grid-area: icon; align-self: center; }
+.viewer.is-paused .vw-nav-label      { grid-area: label; }
+
+.vw-nav-icon {
+  font-size: 1.5rem; line-height: 1;
+  transition: color .2s, text-shadow .2s;
+  flex-shrink: 0;
+}
+.vw-nav-hit:hover .vw-nav-icon {
+  color: #fff;
+  text-shadow: 0 0 12px rgba(255,255,255,.9), 0 0 28px rgba(255,255,255,.5);
+}
+
+.vw-nav-label {
+  font-size: .58rem; letter-spacing: .07em; text-transform: uppercase;
+  color: rgba(255,255,255,.55); line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  transition: color .2s;
+  opacity: 0; /* hidden during playing; fades in when grid is active */
+}
+.viewer.is-paused .vw-nav-label { opacity: 1; }
+.vw-nav-hit:hover .vw-nav-label { color: rgba(255,255,255,.9); }
+
+/* Thumbnail wrap — always sized for the paused layout; hidden via scale/opacity */
+.vw-nav-thumb-wrap {
+  position: relative;
+  width: 220px; height: 124px; /* 16:9 at 220px, 10% larger */
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: center;
+  transition: opacity .35s ease, transform .35s ease;
+}
+.viewer.is-paused .vw-nav-thumb-wrap { opacity: 1; transform: scale(1); }
+
+.vw-nav-thumb {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: opacity .4s ease;
+}
+
+/* Live preview iframe layered over the static thumbnail */
+.vw-nav-preview {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; border: 0;
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+}
+.vw-nav-thumb-wrap.preview-ready .vw-nav-preview { opacity: 1; }
+.vw-nav-thumb-wrap.preview-ready .vw-nav-thumb   { opacity: 0; }
 
 /* ---- Credits overlay ---- */
 .credits-overlay {
@@ -383,10 +563,10 @@ a { color: inherit; text-decoration: none; }
    RESPONSIVE — Mobile portrait
    ========================================================================= */
 @media (max-width: 640px) {
-  :root { --hdr: 44px; }
+  :root { --hdr: 76px; }
 
   .site-name { font-size: .75rem; }
-  .site-nav a { margin-left: 1.25rem; }
+  .site-nav a { margin: 0 .65rem; }
 
   /* Marquee: smaller padding so cards get more height */
   :root { --sr-vpad: 1rem; }
@@ -412,11 +592,14 @@ a { color: inherit; text-decoration: none; }
 
   /* Viewer */
   .vw-nav  { width: 44px; }
-  .vw-nav-label, .vw-nav-thumb { display: none; }
+  .vw-nav-label, .vw-nav-thumb-wrap { display: none; }
   .vw-nav-icon { font-size: 1.1rem; }
-  .vw-top  { height: 42px; }
-  .vw-bottom { height: 52px; }
+  .vw-top  { height: 52px; }
   .vw-bottom-safe { padding: .3rem 1.25rem .15rem; }
+  :root { --vwc-h: 46px; }
+  .vw-controls { gap: .55rem; padding: 0 .85rem; }
+  .vwc-volume { width: 50px; }
+  .vwc-time { font-size: .58rem; }
 
   /* Credits */
   .co-list { grid-template-columns: max-content 1fr; }
@@ -427,12 +610,16 @@ a { color: inherit; text-decoration: none; }
    RESPONSIVE — Landscape mobile / small tablets
    ========================================================================= */
 @media (max-height: 500px) {
-  :root { --hdr: 40px; --sr-vpad: .75rem; }
+  :root { --hdr: 64px; --sr-vpad: .75rem; }
+  .site-header { padding: .5rem var(--pad); gap: .35rem; }
 
-  .vw-top    { height: 38px; }
-  .vw-bottom { height: 44px; }
+  .vw-top    { height: 44px; }
   .vw-nav    { width: 48px; }
-  .vw-nav-label, .vw-nav-thumb { display: none; }
+  .vw-nav-label, .vw-nav-thumb-wrap { display: none; }
+  :root { --vwc-h: 40px; }
+  .vw-controls { gap: .5rem; padding: 0 .75rem; }
+  .vwc-volume { width: 46px; }
+  .vwc-time { display: none; }
 
   /* Always show card title on landscape mobile — no hover on touch screens */
   .reel-card-title {
