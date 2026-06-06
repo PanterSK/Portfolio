@@ -629,9 +629,17 @@
   // Viewer controls
   vwClose.addEventListener("click", closeViewer);
 
-  // Whole nav panel → close viewer (go back to marquee)
-  vwPrev.addEventListener("click", closeViewer);
-  vwNext.addEventListener("click", closeViewer);
+  // Desktop: clicking the nav panel background (outside hit area) closes viewer.
+  // Mobile (portrait or landscape): entire nav always navigates — only X closes.
+  function isMobileViewport() {
+    return window.innerWidth <= 640 || window.innerHeight <= 500;
+  }
+  vwPrev.addEventListener("click", function () {
+    if (isMobileViewport()) { viewerGoTo(current - 1); } else { closeViewer(); }
+  });
+  vwNext.addEventListener("click", function () {
+    if (isMobileViewport()) { viewerGoTo(current + 1); } else { closeViewer(); }
+  });
 
   // Arrow icon hit-area → navigate between projects (stops bubbling so panel doesn't also close)
   vwPrev.querySelector(".vw-nav-hit").addEventListener("click", function (e) {

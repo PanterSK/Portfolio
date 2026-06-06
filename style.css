@@ -594,6 +594,11 @@ a { color: inherit; text-decoration: none; }
   .viewer.is-paused .vw-nav { width: 44px; }
   .viewer.is-paused .vw-nav--prev .vw-nav-hit,
   .viewer.is-paused .vw-nav--next .vw-nav-hit { display: flex; padding: .75rem; }
+  /* Hit area fills the full nav height so every tap navigates — never closes */
+  .vw-nav-hit { flex: 1; }
+
+  /* Close button must sit above the nav panels (nav is z-index:10) */
+  .vw-top  { height: 52px; z-index: 12; }
 
   /* Controls bar — taller, always visible, bigger touch targets */
   .vw-controls { opacity: 1; gap: .7rem; padding: 0 1rem; }
@@ -605,10 +610,9 @@ a { color: inherit; text-decoration: none; }
   .vwc-progress-track { height: 5px; }
   .vwc-progress-handle { width: 14px; height: 14px; transform: translate(-50%, -50%) scale(1); }
 
-  /* Volume slider — restore and widen for comfortable touch dragging */
-  .vwc-volume { display: block; width: 90px; }
-
-  .vw-top  { height: 52px; }
+  /* Progress 75% / Volume 25% of the shared flex space */
+  .vwc-progress { flex: 3; }
+  .vwc-volume { display: block; flex: 1; width: auto; min-width: 40px; }
   .vw-bottom-safe { padding: .3rem 1.25rem .15rem; }
 
   /* Credits */
@@ -631,6 +635,8 @@ a { color: inherit; text-decoration: none; }
   .viewer.is-paused .vw-nav { width: 48px; }
   .viewer.is-paused .vw-nav--prev .vw-nav-hit,
   .viewer.is-paused .vw-nav--next .vw-nav-hit { display: flex; padding: .5rem; }
+  /* Hit area fills the full nav height so every tap navigates — never closes */
+  .vw-nav-hit { flex: 1; }
 
   /* Controls — always visible, bigger touch targets */
   .vw-controls { opacity: 1; gap: .6rem; padding: 0 .9rem; }
