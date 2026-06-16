@@ -114,6 +114,19 @@ a { color: inherit; text-decoration: none; }
   }
 }
 
+/* Instant poster — the banner's thumbnail shows immediately (small JPEG) while
+   the video stream buffers, then crossfades out once the video is playing.
+   z-index:1 sits above the iframe but below the click-blocker (2) and UI (3). */
+.vb-poster {
+  position: absolute; inset: 0; z-index: 1;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  transition: opacity .6s ease;
+  pointer-events: none;
+}
+.vb-frame.vb-playing .vb-poster { opacity: 0; }
+
 /* Transparent overlay — catches all clicks so the video cannot be paused,
    seeked, or right-clicked by the visitor.
    z-index:2 keeps it above the vb-frame but below .vb-ui (z-index:3). */

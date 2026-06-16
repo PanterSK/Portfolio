@@ -146,6 +146,18 @@
                   (typeof PROJECTS !== "undefined" && PROJECTS.length && PROJECTS[0].vimeoId);
     if (!vimeoId) return;
 
+    var frame = document.getElementById("vbFrame");
+
+    // 1) Instant poster — the video's thumbnail (a small JPEG) paints right away
+    //    so the banner is never just black while the video stream buffers.
+    var poster = document.createElement("img");
+    poster.className = "vb-poster";
+    poster.alt = "";
+    poster.setAttribute("aria-hidden", "true");
+    poster.src = "https://vumbnail.com/" + encodeURIComponent(vimeoId) + ".jpg";
+    frame.appendChild(poster);
+
+    // 2) The background video itself
     var iframe = document.createElement("iframe");
     iframe.setAttribute("allow", "autoplay");
     iframe.setAttribute("aria-hidden", "true");
@@ -153,7 +165,32 @@
     iframe.src =
       "https://player.vimeo.com/video/" + encodeURIComponent(vimeoId) +
       "?background=1&autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&dnt=1";
-    document.getElementById("vbFrame").appendChild(iframe);
+    frame.appendChild(iframe);
+
+    // When the video actually starts, crossfade the poster out and only THEN
+    // begin loading the other videos — the banner gets all the bandwidth first.
+    function onBannerPlaying() {
+      frame.classList.add("vb-playing");
+      startDeferredPreloads();
+    }
+    if (typeof Vimeo !== "undefined" && Vimeo.Player) {
+      var bp = new Vimeo.Player(iframe);
+      bp.on("playing", onBannerPlaying);
+    } else {
+      iframe.addEventListener("load", function () { setTimeout(onBannerPlaying, 800); });
+    }
+  }
+
+  // Preload iframes are deferred until the banner is playing, and skipped on
+  // phones, so the banner is never starved of bandwidth on a mobile connection.
+  var _preloadsStarted = false;
+  function startDeferredPreloads() {
+    if (_preloadsStarted) return;
+    _preloadsStarted = true;
+    // Skip background preloading on small screens — save the visitor's data and
+    // keep all bandwidth for the banner; videos still play fine when tapped.
+    if (window.matchMedia && window.matchMedia("(max-width: 640px)").matches) return;
+    createPreloadIframes();
   }
 
   // -----------------------------------------------------------------------
@@ -850,6 +887,11 @@
   buildVideoBanner();     // autoplay background video at top of page
   initPlayerControlEvents();
   buildShowreel();
-  createPreloadIframes(); // kick off background buffering immediately
   fetchHiResThumbs();     // async — replaces vumbnail with hi-res CDN thumbnails
+
+  // Background preloads are normally kicked off once the banner starts playing
+  // (see startDeferredPreloads). Fallback: if autoplay is blocked and "playing"
+  // never fires, start them anyway after a few seconds (desktop only — the
+  // function itself skips phones).
+  setTimeout(startDeferredPreloads, 5000);
 })();
