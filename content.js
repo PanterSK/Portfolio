@@ -92,7 +92,7 @@ const PROJECTS = [
 
     credits: [
       { role: "Director", name: "Patricia Bajova, Timotej Krist" },
-      { role: "Starring",    name: "Tillulah Zander, Leonardo " },
+      { role: "Starring",    name: "Tillulah Zander, Leonardo Cardoso" },
       { role: "Cinematography",    name: "Timotej Krist" },
       { role: "Editing",    name: "Timotej Krist" },
     ],

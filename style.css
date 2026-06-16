@@ -100,14 +100,17 @@ a { color: inherit; text-decoration: none; }
   min-height: 100svh;     /* cover the full banner height (one screen) */
 }
 
-/* Desktop only (wide AND tall) — banner 30% taller so you scroll into the
-   showreel. Excludes landscape phones (height ≤ 500) and portrait phones
-   (width ≤ 640), which keep the one-screen / fit sizing above. */
+/* Desktop (wide AND tall) — fit the WHOLE 16:9 video to the page width at its
+   natural height, so the full frame shows with no cover-crop / zoom. The banner
+   hugs the video. Excludes landscape phones (height ≤ 500) and portrait phones
+   (width ≤ 640), which keep their own sizing above/below. */
 @media (min-width: 641px) and (min-height: 501px) {
-  .video-banner { height: 130vh; height: 130svh; }
+  .video-banner { height: 56.25vw; }   /* 16:9 from full page width */
   .vb-frame iframe {
-    min-width: 231.11svh;   /* 16:9 from a 130svh-tall banner */
-    min-height: 130svh;
+    width: 100vw;
+    height: 56.25vw;
+    min-width: 0;            /* cancel the cover-oversize */
+    min-height: 0;
   }
 }
 
