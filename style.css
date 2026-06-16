@@ -72,8 +72,9 @@ a { color: inherit; text-decoration: none; }
 .video-banner {
   position: relative;
   width: 100%;
-  height: 130vh;   /* 30% taller than the viewport on desktop — scroll into showreel */
-  height: 130svh;
+  /* Base: one screen tall (phones & default). Desktop bumps this to 130svh below. */
+  height: 100vh;
+  height: 100svh;
   overflow: hidden;
   background: #000;
 }
@@ -91,13 +92,23 @@ a { color: inherit; text-decoration: none; }
   pointer-events: none;
   /* The iframe is ALWAYS kept at 16:9 so Vimeo fills it edge-to-edge with no
      letterbox bars. Both the base size (100vw / 56.25vw) and the min sizes
-     (231.11svh / 130svh) are 16:9 pairs, so whichever rule wins, the box stays
-     16:9. The min sizes are scaled to the tallest banner (130svh on desktop),
-     so the video always covers the banner; overflow is clipped by .vb-frame. */
+     (177.78svh / 100svh) are 16:9 pairs, so whichever rule wins, the box stays
+     16:9. Base covers ONE screen; the desktop block below scales it to 130svh. */
   width: 100vw;
   height: 56.25vw;        /* 16:9 from width */
-  min-width: 231.11svh;   /* 16:9 from a 130svh-tall banner */
-  min-height: 130svh;     /* cover the full banner height */
+  min-width: 177.78svh;   /* 16:9 from a one-screen-tall banner */
+  min-height: 100svh;     /* cover the full banner height (one screen) */
+}
+
+/* Desktop only (wide AND tall) — banner 30% taller so you scroll into the
+   showreel. Excludes landscape phones (height ≤ 500) and portrait phones
+   (width ≤ 640), which keep the one-screen / fit sizing above. */
+@media (min-width: 641px) and (min-height: 501px) {
+  .video-banner { height: 130vh; height: 130svh; }
+  .vb-frame iframe {
+    min-width: 231.11svh;   /* 16:9 from a 130svh-tall banner */
+    min-height: 130svh;
+  }
 }
 
 /* Transparent overlay — catches all clicks so the video cannot be paused,
