@@ -694,6 +694,9 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 640px) {
   :root { --hdr: 40px; --sr-vpad: 1rem; --vwc-h: 64px; }
 
+  /* Banner — half the screen height on portrait phones */
+  .video-banner { height: 50vh; height: 50svh; }
+
   .site-name { font-size: .75rem; }
   .site-nav a { margin: 0 .65rem; }
 
