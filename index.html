@@ -10,10 +10,27 @@
 </head>
 <body>
 
-  <header class="site-header">
-    <a href="#" class="site-name" id="siteName" data-go-home>Timotej Krist</a>
-    <nav class="site-nav">
-      <a href="#" id="aboutLink">About</a>
+  <!-- ===== Video banner — full bleed; name + nav float on top ===== -->
+  <section class="video-banner" id="videoBanner">
+    <div class="vb-frame" id="vbFrame"></div>
+    <!-- Blocks all pointer events so the video cannot be interacted with -->
+    <div class="vb-overlay"></div>
+    <!-- Name + nav overlaid; only these elements are clickable -->
+    <div class="vb-ui" id="vbUi">
+      <a href="#" class="site-name" id="siteName" data-go-home>Timotej Krist</a>
+      <nav class="site-nav">
+        <a href="#" id="aboutLink">About</a>
+        <a href="#" id="contactLink">Contact</a>
+      </nav>
+    </div>
+  </section>
+
+  <!-- Slim fixed header — slides in when the banner is scrolled out of view,
+       disappears again when the user scrolls back to the top -->
+  <header class="scroll-header" id="scrollHeader">
+    <nav class="sh-nav">
+      <a href="#" id="aboutLink2">About</a>
+      <a href="#" id="contactLink2">Contact</a>
     </nav>
   </header>
 
@@ -34,18 +51,24 @@
       <p class="ao-name" id="aoName"></p>
       <p class="ao-role" id="aoRole"></p>
       <p class="ao-text" id="aoText"></p>
-      <ul id="aoContacts" class="ao-contacts"></ul>
+    </div>
+  </div>
+
+  <!-- ===== Contact overlay ===== -->
+  <div id="contactOverlay" class="contact-overlay" aria-hidden="true">
+    <button class="ctc-close" id="contactClose" aria-label="Close">×</button>
+    <div class="ctc-content">
+      <p class="ctc-heading">Contact</p>
+      <ul id="ctcLinks" class="ctc-links"></ul>
     </div>
   </div>
 
   <!-- ===== Expanded video viewer — full-bleed; all UI overlays the video ===== -->
   <div id="viewer" class="viewer" aria-hidden="true">
 
-    <!-- Video fills the entire viewport -->
     <div class="vw-video">
       <div id="playerFrame" class="player-frame"></div>
       <div class="vw-click-toggle" id="vwClickToggle"></div>
-      <!-- Centre play icon: visible only while paused -->
       <div class="vw-center-icon" id="vwCenterIcon" aria-hidden="true">▶</div>
       <div class="vw-controls" id="vwControls">
         <button class="vwc-btn vwc-play" id="vwcPlay" aria-label="Play / pause">▶</button>
@@ -62,13 +85,11 @@
       </div>
     </div>
 
-    <!-- Header overlaid on top of video -->
     <div class="vw-top">
       <button class="vw-name" id="vwName" data-go-home></button>
       <button class="vw-close" id="vwClose" aria-label="Close">×</button>
     </div>
 
-    <!-- Title + Credits overlaid just above the controls bar -->
     <div class="vw-bottom">
       <div class="vw-bottom-safe">
         <p class="vw-title" id="vwTitle"></p>
@@ -76,7 +97,6 @@
       </div>
     </div>
 
-    <!-- Side nav panels overlaid on left/right edges -->
     <button class="vw-nav vw-nav--prev" id="vwPrev" aria-label="Previous project">
       <div class="vw-nav-hit">
         <div class="vw-nav-thumb-wrap" id="vwPrevThumbWrap">
@@ -101,7 +121,6 @@
       <dl class="co-list" id="coList"></dl>
       <button class="co-close" id="coClose">×</button>
     </div>
-  </div>
   </div>
 
   <footer class="site-footer">

@@ -25,16 +25,21 @@ const SITE = {
   // A longer paragraph about yourself. Write whatever you like.
   about:
     "First-year Communication & Multimedia Design student at NHL Stenden " +
-    "in Leeuwarden, the Netherlands. Originally from Slovakia. I make " +
-    "videos — short films, documentary, and experimental work.",
+    "in Leeuwarden, the Netherlands. Originally from Slovakia." +
+    "\nI like to make videos :) \n\nkrist.timo@gmail.com",
 
   // Your contact / social links. To remove one, delete the whole line.
   // To add one, copy a line and change the text and the link.
+  // Use { label: "...", link: "https://..." } for a clickable link.
+  // Use { label: "...", text: "..." }          for plain (non-clickable) text.
   contact: [
-    { label: "Email",     link: "mailto:timotej@example.com" },
-    { label: "Instagram", link: "https://instagram.com/yourusername" },
-    { label: "Vimeo",     link: "https://vimeo.com/yourusername" },
+    { label: "Email",     text: "krist.timo@gmail.com" },
+    { label: "Instagram", link: "https://instagram.com/timotej_krist" },
+    { label: "Vimeo",     link: "https://vimeo.com/user256577218" },
   ],
+
+  // Vimeo ID for the full-screen background video at the top of the page.
+  bannerVimeoId: "1201778479",
 
 };
 
@@ -68,9 +73,12 @@ const PROJECTS = [
 
     // Credits. Add or remove lines freely. Format:  { role: "...", name: "..." }
     credits: [
-      { role: "Director",       name: "Timotej Krist" },
+      { role: "Director",       name: "Pedro Carmo" },
+      { role: "Starring",       name: "Gleb Shevchenko" },
       { role: "Cinematography", name: "Timotej Krist" },
-      { role: "Editor",         name: "Timotej Krist" },
+      { role: "Editing",         name: "Timotej Krist" },
+      { role: "Storyboarding",  name: "Luka Liefers, Pedro Carmo" },
+      ,
     ],
   },
 
@@ -83,8 +91,10 @@ const PROJECTS = [
       "Another short description goes here. Keep it brief and personal.",
 
     credits: [
-      { role: "Director", name: "Timotej Krist" },
-      { role: "Sound",    name: "A Friend's Name" },
+      { role: "Director", name: "Patricia Bajova, Timotej Krist" },
+      { role: "Starring",    name: "Tillulah Zander, Leonardo " },
+      { role: "Cinematography",    name: "Timotej Krist" },
+      { role: "Editing",    name: "Timotej Krist" },
     ],
   },
 
@@ -97,7 +107,9 @@ const PROJECTS = [
       "One more example. Delete the ones you don't need and add your own.",
 
     credits: [
-      { role: "Director", name: "Timotej Krist" },
+      { role: "Director", name: "Pedro Carmo" },
+      { role: "Cinematography", name: "Timotej Krist" },
+      { role: "Editing", name: "Timotej Krist" },
     ],
   },
 

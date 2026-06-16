@@ -39,6 +39,8 @@
   var coClose        = document.getElementById("coClose");
   var coTitle        = document.getElementById("coTitle");
   var coList         = document.getElementById("coList");
+  var scrollHeader   = document.getElementById("scrollHeader");
+  var vbUi           = document.getElementById("vbUi");
 
   // --- State -------------------------------------------------------------
   var current      = 0;
@@ -65,7 +67,8 @@
   function applySiteInfo() {
     if (typeof SITE === "undefined") return;
     document.title = SITE.name + " — Videography";
-    setText("siteName", SITE.name);
+    // Show "Name — Role" in the header (e.g. "Timotej Krist — Videographer")
+    setText("siteName", SITE.role ? SITE.name + " — " + SITE.role : SITE.name);
     setText("footName", SITE.name);
   }
 
@@ -82,18 +85,6 @@
       setText("aoName", SITE.name);
       setText("aoRole", SITE.role || "");
       setText("aoText", SITE.about || "");
-
-      var list = document.getElementById("aoContacts");
-      list.innerHTML = "";
-      (SITE.contact || []).forEach(function (c) {
-        var li = document.createElement("li");
-        var a  = document.createElement("a");
-        a.textContent = c.label;
-        a.href = c.link;
-        if (c.link.indexOf("mailto:") !== 0) { a.target = "_blank"; a.rel = "noopener"; }
-        li.appendChild(a);
-        list.appendChild(li);
-      });
     }
     aboutOverlay.classList.add("open");
     aboutOverlay.setAttribute("aria-hidden", "false");
@@ -104,6 +95,65 @@
     aboutOverlay.classList.remove("open");
     aboutOverlay.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
+  }
+
+  // -----------------------------------------------------------------------
+  // Contact overlay
+  // -----------------------------------------------------------------------
+  var contactOverlay = document.getElementById("contactOverlay");
+  var contactClose   = document.getElementById("contactClose");
+
+  function openContact() {
+    if (typeof SITE !== "undefined") {
+      var list = document.getElementById("ctcLinks");
+      list.innerHTML = "";
+      (SITE.contact || []).forEach(function (c) {
+        var li = document.createElement("li");
+        if (c.link) {
+          // Clickable link
+          var a  = document.createElement("a");
+          a.textContent = c.label;
+          a.href = c.link;
+          if (c.link.indexOf("mailto:") !== 0) { a.target = "_blank"; a.rel = "noopener"; }
+          li.appendChild(a);
+        } else {
+          // Plain text (e.g. email displayed without a mailto: link)
+          var span = document.createElement("span");
+          span.className = "ctc-plain";
+          span.textContent = c.text ? c.label + " — " + c.text : c.label;
+          li.appendChild(span);
+        }
+        list.appendChild(li);
+      });
+    }
+    contactOverlay.classList.add("open");
+    contactOverlay.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeContact() {
+    contactOverlay.classList.remove("open");
+    contactOverlay.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  // -----------------------------------------------------------------------
+  // Video banner — autoplay muted looping background; no user controls
+  // -----------------------------------------------------------------------
+  function buildVideoBanner() {
+    // Use SITE.bannerVimeoId if set, otherwise fall back to the first project
+    var vimeoId = (typeof SITE !== "undefined" && SITE.bannerVimeoId) ||
+                  (typeof PROJECTS !== "undefined" && PROJECTS.length && PROJECTS[0].vimeoId);
+    if (!vimeoId) return;
+
+    var iframe = document.createElement("iframe");
+    iframe.setAttribute("allow", "autoplay");
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.tabIndex = -1;
+    iframe.src =
+      "https://player.vimeo.com/video/" + encodeURIComponent(vimeoId) +
+      "?background=1&autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&dnt=1";
+    document.getElementById("vbFrame").appendChild(iframe);
   }
 
   // -----------------------------------------------------------------------
@@ -419,6 +469,7 @@
         id:         parseInt(p.vimeoId, 10),
         autoplay:   true,
         muted:      true,   // muted so the browser permits autoplay
+        loop:       true,   // loop the video; suppresses Vimeo's end-screen / related-video overlay
         title:      false,
         byline:     false,
         portrait:   false,
@@ -619,6 +670,15 @@
     p.on("play",  function () { vwcPlay.textContent = "❚❚"; });
     p.on("pause", function () { vwcPlay.textContent = "▶";  });
 
+    // Belt-and-suspenders loop: if the player somehow reaches the end without
+    // looping (e.g. Vimeo ignores the loop option on some accounts/plans),
+    // restart manually so the end-screen / related-video overlay never appears.
+    p.on("ended", function () {
+      p.setCurrentTime(0).then(function () { p.play().catch(function () {}); });
+      setProgress(0);
+      vwcTime.textContent = "0:00 / " + formatTime(playerDuration);
+    });
+
     p.on("volumechange", function (data) {
       vwcVolume.value = data.volume;
     });
@@ -665,7 +725,26 @@
   });
   aoClose.addEventListener("click", closeAbout);
   aboutOverlay.addEventListener("click", function (e) {
-    if (e.target === aboutOverlay) closeAbout(); // click outside content area
+    if (e.target === aboutOverlay) closeAbout();
+  });
+
+  // Contact overlay
+  document.getElementById("contactLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    openContact();
+  });
+  contactClose.addEventListener("click", closeContact);
+  contactOverlay.addEventListener("click", function (e) {
+    if (e.target === contactOverlay) closeContact();
+  });
+
+  // Scroll-header nav — mirrors the banner overlay links so About / Contact
+  // remain reachable once the user has scrolled past the video banner.
+  document.getElementById("aboutLink2").addEventListener("click", function (e) {
+    e.preventDefault(); openAbout();
+  });
+  document.getElementById("contactLink2").addEventListener("click", function (e) {
+    e.preventDefault(); openContact();
   });
 
   // Clicking the viewer background closes it.
@@ -735,6 +814,8 @@
         closeViewer();
       } else if (aboutOverlay.classList.contains("open")) {
         closeAbout();
+      } else if (contactOverlay.classList.contains("open")) {
+        closeContact();
       }
     }
     if (!viewer.classList.contains("open")) return;
@@ -751,9 +832,22 @@
   });
 
   // -----------------------------------------------------------------------
+  // Slim scroll-header visibility (IntersectionObserver)
+  // The scroll-header slides in the moment .vb-ui (name + nav on the banner)
+  // scrolls above the viewport, and slides back out when it returns.
+  // -----------------------------------------------------------------------
+  if (scrollHeader && vbUi && typeof IntersectionObserver !== "undefined") {
+    var ioHeader = new IntersectionObserver(function (entries) {
+      scrollHeader.classList.toggle("visible", !entries[0].isIntersecting);
+    });
+    ioHeader.observe(vbUi);
+  }
+
+  // -----------------------------------------------------------------------
   // Init
   // -----------------------------------------------------------------------
   applySiteInfo();
+  buildVideoBanner();     // autoplay background video at top of page
   initPlayerControlEvents();
   buildShowreel();
   createPreloadIframes(); // kick off background buffering immediately
